@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Consulting — home" />
+    <title>Consulting — home</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="alternate" hreflang="ru" href="../index.html" />
+    <link rel="alternate" hreflang="en" href="index.html" />
+  </head>
+  <body>
+    <div class="page">
+      <!-- Header: section links and RU / EN toggle -->
+      <header class="site-header">
+        <a class="brand" href="index.html">Ivan Zatinatsky · consulting</a>
+        <div class="header-controls">
+          <nav class="site-nav" aria-label="Main navigation">
+            <a href="about.html">About</a>
+            <a href="articles.html">Articles</a>
+            <a href="products.html">Products</a>
+          </nav>
+          <div class="lang-switch" role="navigation" aria-label="Language">
+            <a href="../index.html" hreflang="ru">RU</a>
+            <a href="index.html" aria-current="page">EN</a>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <!-- Hero: headline and entry points -->
+        <section class="hero-block" aria-labelledby="hero-heading">
+          <h1 id="hero-heading">Strategy and clarity without the noise</h1>
+          <p class="lead">
+            I help companies and people make decisions grounded in structure,
+            data, and sound judgment. Below are three entry points: who I am,
+            what to read, and what you can engage me for.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="about.html">About</a>
+            <a class="btn btn-secondary" href="articles.html">Articles</a>
+            <a class="btn btn-secondary" href="products.html">Products</a>
+          </div>
+        </section>
+
+        <!-- Sequential typewriter lines; JSON list; sr-only filled by script -->
+        <section class="typewriter-banner" aria-label="Note under hero">
+          <script type="application/json" class="typewriter-phrases-json">
+            [
+              "I vibe-coded this site in 4 prompts lol...",
+              "then another 12 prompts tinkering with the UI and shipping it",
+              "if it feels like your analysts aren't pulling their weight, they probably aren't",
+              "Telegram: @zatinatscky"
+            ]
+          </script>
+          <p class="visually-hidden typewriter-a11y"></p>
+          <p class="typewriter-line" aria-hidden="true"><span class="typewriter-output"></span><span class="typewriter-cursor">▍</span></p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>© consulting</span>
+        <a href="about.html">contacts in the About section</a>
+      </footer>
+    </div>
+    <script src="../js/typewriter-home.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,408 @@
+/**
+ * Глобальные стили визитки: только чёрный и белый, угловатые формы, линейные акценты.
+ * Шрифт — моноширинный стек для «технического», линейного вида.
+ */
+
+/* --- Сброс и база --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --ink: #000000;
+  --paper: #ffffff;
+  --line: 1px solid var(--ink);
+  --line-thick: 3px solid var(--ink);
+  --stripe-step: 12px;
+  --pad: clamp(1rem, 4vw, 2.5rem);
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family:
+    ui-monospace,
+    "Cascadia Code",
+    "Source Code Pro",
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  color: var(--ink);
+  background-color: var(--paper);
+  /* Тонкая диагональная линейка — лёгкая текстура без серого «цвета» */
+  background-image: repeating-linear-gradient(
+    -56deg,
+    transparent,
+    transparent calc(var(--stripe-step) - 1px),
+    var(--ink) calc(var(--stripe-step) - 1px),
+    var(--ink) var(--stripe-step)
+  );
+  background-size: var(--stripe-step) var(--stripe-step);
+  background-blend-mode: multiply;
+}
+
+/* Поверх текстуры — сплошой слой, чтобы читабельность не страдала */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: var(--paper);
+  opacity: 0.97;
+}
+
+/* --- Обёртка страницы --- */
+.page {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* --- Шапка: бренд слева, справа — навигация + переключатель языка --- */
+.site-header {
+  border-bottom: var(--line-thick);
+  padding: var(--pad);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Контейнер: основное меню и RU/EN в одной линии, с переносом на узких экранах */
+.header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0;
+}
+
+.brand {
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  border-left: var(--line-thick);
+  padding-left: 0.75rem;
+}
+
+.brand:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Навигация — вертикальные разделители между пунктами */
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  align-items: stretch;
+}
+
+.site-nav a,
+.lang-switch a {
+  color: var(--ink);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: var(--line);
+  margin-left: -1px; /* сшивка границ в единую лесенку */
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.site-nav a:first-child {
+  margin-left: 0;
+}
+
+/* Группа языков отделена от разделов сайта вертикальной чертой */
+.lang-switch {
+  display: flex;
+  align-items: stretch;
+  margin-left: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: var(--line-thick);
+}
+
+.lang-switch a:first-child {
+  margin-left: 0;
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"],
+.lang-switch a:hover,
+.lang-switch a[aria-current="page"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --- Основной блок --- */
+main {
+  flex: 1;
+  padding: var(--pad);
+  max-width: 72rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Заголовки секций: угловатая «плашка» слева */
+.section-title {
+  margin: 0 0 2rem;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.5rem 0 0.5rem 1rem;
+  border-left: var(--line-thick);
+  border-bottom: var(--line);
+}
+
+.lead {
+  font-size: clamp(1rem, 2.2vw, 1.15rem);
+  line-height: 1.65;
+  max-width: 42rem;
+  margin: 0 0 2rem;
+}
+
+/* --- Сетка карточек (статьи, продукты) --- */
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0;
+  border: var(--line-thick);
+}
+
+.grid-cards article {
+  border: var(--line);
+  margin: -1px 0 0 -1px;
+  padding: 1.25rem 1.5rem;
+  background: var(--paper);
+}
+
+.grid-cards h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.grid-cards p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.meta {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  opacity: 1;
+}
+
+/* --- Декоративный блок на главной: ступенчатая рамка --- */
+.hero-block {
+  border: var(--line-thick);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+/* Внутренний «сдвиг» рамки — второй контур без скруглений */
+.hero-block::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: var(--line);
+  pointer-events: none;
+}
+
+.hero-block h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.75rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 1.5rem;
+}
+
+/* Кнопки-линии: только контур и резкие углы */
+.btn {
+  display: inline-block;
+  padding: 0.65rem 1.25rem;
+  border: var(--line-thick);
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-right: -3px;
+}
+
+.btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn-secondary {
+  border-width: 1px;
+}
+
+/* --- Блок набора текста на главной (моноширинная строка + мигающий курсор) --- */
+.typewriter-banner {
+  border: var(--line-thick);
+  box-sizing: border-box;
+  background: var(--paper);
+  /* Как в .hero-block: выравнивание по началу строки */
+  text-align: start;
+  /* На всю ширину колонки main (рамка как у hero), вместе с масштабом страницы */
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  margin-bottom: 2.5rem;
+  /* Те же внутренние поля, что у .hero-block — общая линия с заголовком и лидом */
+  padding: clamp(1.5rem, 5vw, 3rem);
+  /* Как в первой версии блока: размер строки набора */
+  font-size: clamp(0.82rem, 2vw, 0.95rem);
+  line-height: 1.55;
+  /* Сколько строк в фиксированной высоте; при обрезке увеличьте число */
+  --tw-lines: 2;
+  /*
+   * Высота: сумма вертикальных полей (два раза одно значение clamp как у hero)
+   * плюс строки текста
+   */
+  height: calc(
+    (clamp(1.5rem, 5vw, 3rem) * 2) + (1.55em * var(--tw-lines))
+  );
+  overflow: hidden;
+}
+
+.typewriter-line {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: 0.03em;
+  word-break: break-word;
+  /* Та же колонка текста, что у .lead внутри hero — левый край совпадает */
+  max-width: 42rem;
+  text-align: start;
+  text-indent: 0;
+  /*
+   * Не pre-wrap: иначе пробелы/перенос в разметке между <p> и <span>
+   * дают зазор слева. Переносы длинной строки — обычные (normal).
+   */
+  white-space: normal;
+  max-height: calc(1.55em * var(--tw-lines));
+  overflow: hidden;
+}
+
+/* JSON со списком фраз не участвует в отрисовке и не ломает поток */
+.typewriter-phrases-json {
+  display: none;
+}
+
+/* Курсор «печатной машинки»: вертикальная черта в такт анимации */
+.typewriter-cursor {
+  display: inline-block;
+  font-weight: 700;
+  margin-left: 1px;
+  animation: typewriter-blink 0.95s step-end infinite;
+}
+
+.typewriter-cursor--done {
+  animation-duration: 1.25s;
+}
+
+@keyframes typewriter-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Только для скринридеров: полная фраза без посимвольного шума в live region */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Двухколоночный текст «обо мне» --- */
+.split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 640px) {
+  .split {
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+}
+
+.split-panel {
+  border: var(--line-thick);
+  padding: 1.5rem;
+}
+
+.split-panel h2 {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.split-panel p {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.split-panel p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Подвал --- */
+.site-footer {
+  border-top: var(--line-thick);
+  padding: 1rem var(--pad);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.site-footer a {
+  color: var(--ink);
+}

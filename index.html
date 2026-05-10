@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Консалтинг — главная" />
+    <title>Консалтинг — главная</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="alternate" hreflang="ru" href="index.html" />
+    <link rel="alternate" hreflang="en" href="en/index.html" />
+  </head>
+  <body>
+    <div class="page">
+      <!-- Шапка: навигация по разделам и переключатель RU / EN -->
+      <header class="site-header">
+        <a class="brand" href="index.html">Иван Затинацкий · консалтинг</a>
+        <div class="header-controls">
+          <nav class="site-nav" aria-label="Основное меню">
+            <a href="about.html">Обо мне</a>
+            <a href="articles.html">Статьи</a>
+            <a href="products.html">Продукты</a>
+          </nav>
+          <div class="lang-switch" role="navigation" aria-label="Язык">
+            <a href="index.html" aria-current="page">RU</a>
+            <a href="en/index.html" hreflang="en">EN</a>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <!-- Герой-блок: короткий тезис и переходы в разделы -->
+        <section class="hero-block" aria-labelledby="hero-heading">
+          <h1 id="hero-heading">Стратегия и ясность без лишнего шума</h1>
+          <p class="lead">
+            Помогаю компаниям и людям принимать решения на основе структуры,
+            данных и здравого смысла. Ниже — три входа: кто я, что читать и что
+            можно заказать.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="about.html">Обо мне</a>
+            <a class="btn btn-secondary" href="articles.html">Статьи</a>
+            <a class="btn btn-secondary" href="products.html">Продукты</a>
+          </div>
+        </section>
+
+        <!-- Последовательный набор фраз: список в JSON; a11y — полный текст из скрипта -->
+        <section class="typewriter-banner" aria-label="Подпись под героем">
+          <script type="application/json" class="typewriter-phrases-json">
+            [
+              "я навайбкодил этот сайт за 4 промпта лол...",
+              "потом еще 12 промптов игрался с интерфейсом и опубликовал",
+              "если у вас ощущение, что ваши аналитики недорабатывают, значит они недорабатывают",
+              "связаться в тг: @zatinatscky"
+            ]
+          </script>
+          <p class="visually-hidden typewriter-a11y"></p>
+          <p class="typewriter-line" aria-hidden="true"><span class="typewriter-output"></span><span class="typewriter-cursor">▍</span></p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>© консалтинг</span>
+        <a href="about.html">контакты в разделе «Обо мне»</a>
+      </footer>
+    </div>
+    <script src="js/typewriter-home.js" defer></script>
+  </body>
+</html>
