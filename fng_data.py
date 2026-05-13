@@ -47,10 +47,15 @@ def utc_date_from_ts(ts: int) -> str:
 
 def _normalize_database_url(url: str) -> str:
     """
-    Render иногда отдаёт postgres://... SQLAlchemy 2 ожидает postgresql://...
+    - Render иногда отдаёт postgres://... → приводим к postgresql://...
+    - Для драйвера psycopg v3 SQLAlchemy ожидает префикс postgresql+psycopg://
+      (иначе по умолчанию тянется psycopg2, на Python 3.14 часто нет колёс).
     """
     if url.startswith("postgres://"):
-        return url.replace("postgres://", "postgresql://", 1)
+        url = url.replace("postgres://", "postgresql://", 1)
+    # Уже указан драйвер (postgresql+psycopg, +asyncpg, …) — не трогаем.
+    if url.startswith("postgresql://") and "+" not in url.split("://", 1)[0]:
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
     return url
 
 

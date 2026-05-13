@@ -25,7 +25,9 @@ services:
     name: fear-greed-daily-sync
     env: python
     schedule: "15 3 * * *"
-    buildCommand: pip install -r requirements.txt
+    # Только requests — см. requirements-cron.txt (полный requirements.txt
+    # для веба тянет pandas/Dash и может «висеть» на metadata в билде cron).
+    buildCommand: pip install --upgrade pip && pip install -r requirements-cron.txt
     startCommand: python scripts/trigger_fng_sync.py
     envVars:
       - key: SITE_BASE_URL

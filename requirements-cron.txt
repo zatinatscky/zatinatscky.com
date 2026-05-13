@@ -1,0 +1,5 @@
+# Зависимости только для Render Cron (scripts/trigger_fng_sync.py).
+# Отдельный файл, чтобы билд не тянул Dash/pandas/plotly — там pip часто
+# долго зависает на шаге «Preparing metadata (pyproject.toml)…».
+
+requests==2.32.3

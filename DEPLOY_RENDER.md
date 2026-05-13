@@ -11,6 +11,12 @@
 - `scripts/trigger_fng_sync.py` — Render Cron дергает `/jobs/fng-sync` на web-сервисе.
 - `render.yaml` — Postgres + web + cron.
 
+## PostgreSQL-драйвер (локально и на Render)
+
+В `requirements.txt` используется **psycopg v3** (`psycopg[binary]`): под **Python 3.14** на macOS нет колёс `psycopg2-binary`, сборка из исходников требует `pg_config`.
+
+Строка `DATABASE_URL` от Render вида `postgresql://...` в коде превращается в **`postgresql+psycopg://...`** для SQLAlchemy.
+
 ## Локальный запуск
 
 ### Вариант A: только SQLite (без установки Postgres)
