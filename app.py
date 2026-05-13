@@ -97,25 +97,30 @@ def create_server() -> Flask:
     return server
 
 
-def build_dash(server: Flask) -> Dash:
-    """Создает Dash-приложение поверх существующего Flask-сервера."""
-    dash_app = Dash(
-        __name__,
-        server=server,
-        routes_pathname_prefix="/dash/",
-        title="Fear & Greed Dashboard",
+def _dash_layout():
+    """
+    Собирает layout при каждом открытии /dash/ в браузере.
+
+    Раньше графики строились один раз при старте процесса — локально и на Render
+    легко расходились (разные БД, синк после старта, обновление без рестарта).
+    """
+    engine = get_engine()
+    backend_label = (
+        "PostgreSQL (DATABASE_URL)"
+        if engine.dialect.name == "postgresql"
+        else "SQLite (./data/fear_greed.db — локально без DATABASE_URL)"
     )
 
-    df = load_fng_dataframe(get_engine())
+    df = load_fng_dataframe(engine)
     if df.empty:
-        dash_app.layout = html.Div(
+        return html.Div(
             [
                 html.H1("Fear & Greed dashboard"),
                 html.P("No data yet. Run sync and refresh page."),
+                html.P(f"Backend: {backend_label}", style={"fontSize": "0.9rem"}),
             ],
             style={"fontFamily": "monospace", "padding": "24px"},
         )
-        return dash_app
 
     fig_index = px.line(
         df,
@@ -149,12 +154,15 @@ def build_dash(server: Flask) -> Dash:
         labels={"classification": "Classification", "points": "Data points"},
     )
 
-    dash_app.layout = html.Div(
+    return html.Div(
         [
             html.H1("Crypto Fear & Greed Dashboard"),
             html.P(
-                "Source: alternative.me/fng API. "
-                "Data stored in PostgreSQL (DATABASE_URL).",
+                [
+                    "Source: alternative.me/fng API. Data: ",
+                    html.Strong(backend_label),
+                    f" — {len(df)} rows.",
+                ],
             ),
             dcc.Graph(figure=fig_index),
             dcc.Graph(figure=fig_rolling),
@@ -162,6 +170,19 @@ def build_dash(server: Flask) -> Dash:
         ],
         style={"fontFamily": "Arial, sans-serif", "maxWidth": "1200px", "margin": "0 auto"},
     )
+
+
+def build_dash(server: Flask) -> Dash:
+    """Создает Dash-приложение поверх существующего Flask-сервера."""
+    dash_app = Dash(
+        __name__,
+        server=server,
+        routes_pathname_prefix="/dash/",
+        title="Fear & Greed Dashboard",
+    )
+
+    # Функция layout — Dash вызывает её при загрузке страницы (свежие данные из БД).
+    dash_app.layout = _dash_layout
     return dash_app
 
 
