@@ -8,20 +8,37 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from hmac import compare_digest
 from pathlib import Path
 
-import dash
-import plotly.express as px
-from dash import Dash, dcc, html
+from dash import Dash
 from flask import Flask, abort, redirect, request, send_from_directory
 
 from fng_data import full_refresh, get_engine, load_fng_dataframe
+from fng_dash_layout import build_dashboard_layout, empty_dashboard_layout, register_dash_callbacks
 
 
 ROOT_DIR = Path(__file__).resolve().parent
 CRON_TOKEN = os.getenv("CRON_TOKEN", "")
+
+
+def _ensure_stdio_logging() -> None:
+    """
+    Локально и под gunicorn: если корневой логгер ещё без обработчиков — пишем INFO в stderr.
+
+    Уровень можно переопределить: LOG_LEVEL=DEBUG
+    """
+    root = logging.getLogger()
+    if root.handlers:
+        root.setLevel(getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO))
+        return
+    logging.basicConfig(
+        level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO),
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
 
 
 def create_server() -> Flask:
@@ -31,6 +48,8 @@ def create_server() -> Flask:
     - выступает host-сервером для Dash.
     """
     server = Flask(__name__)
+
+    _ensure_stdio_logging()
 
     engine = get_engine()
 
@@ -99,77 +118,13 @@ def create_server() -> Flask:
 
 def _dash_layout():
     """
-    Собирает layout при каждом открытии /dash/ в браузере.
-
-    Раньше графики строились один раз при старте процесса — локально и на Render
-    легко расходились (разные БД, синк после старта, обновление без рестарта).
+    Собирает layout при каждом открытии /dash/ в браузере (см. fng_dash_layout).
     """
     engine = get_engine()
-    backend_label = (
-        "PostgreSQL (DATABASE_URL)"
-        if engine.dialect.name == "postgresql"
-        else "SQLite (./data/fear_greed.db — локально без DATABASE_URL)"
-    )
-
     df = load_fng_dataframe(engine)
     if df.empty:
-        return html.Div(
-            [
-                html.H1("Fear & Greed dashboard"),
-                html.P("No data yet. Run sync and refresh page."),
-                html.P(f"Backend: {backend_label}", style={"fontSize": "0.9rem"}),
-            ],
-            style={"fontFamily": "monospace", "padding": "24px"},
-        )
-
-    fig_index = px.line(
-        df,
-        x="date_utc",
-        y="value",
-        title="Fear & Greed Index Over Time",
-        labels={"date_utc": "Date (UTC)", "value": "Index value"},
-    )
-    fig_index.update_traces(line={"width": 2}, name="Daily index")
-
-    fig_rolling = px.line(
-        df,
-        x="date_utc",
-        y="rolling_30d",
-        title="30-Day Rolling Average",
-        labels={"date_utc": "Date (UTC)", "rolling_30d": "Rolling avg"},
-    )
-    fig_rolling.update_traces(line={"width": 2}, name="30d average")
-
-    class_counts = (
-        df.groupby("classification", dropna=False)["value"]
-        .count()
-        .reset_index(name="points")
-        .sort_values("points", ascending=False)
-    )
-    fig_classes = px.bar(
-        class_counts,
-        x="classification",
-        y="points",
-        title="Distribution by Classification",
-        labels={"classification": "Classification", "points": "Data points"},
-    )
-
-    return html.Div(
-        [
-            html.H1("Crypto Fear & Greed Dashboard"),
-            html.P(
-                [
-                    "Source: alternative.me/fng API. Data: ",
-                    html.Strong(backend_label),
-                    f" — {len(df)} rows.",
-                ],
-            ),
-            dcc.Graph(figure=fig_index),
-            dcc.Graph(figure=fig_rolling),
-            dcc.Graph(figure=fig_classes),
-        ],
-        style={"fontFamily": "Arial, sans-serif", "maxWidth": "1200px", "margin": "0 auto"},
-    )
+        return empty_dashboard_layout()
+    return build_dashboard_layout(df)
 
 
 def build_dash(server: Flask) -> Dash:
@@ -178,11 +133,12 @@ def build_dash(server: Flask) -> Dash:
         __name__,
         server=server,
         routes_pathname_prefix="/dash/",
-        title="Fear & Greed Dashboard",
+        title="Crypto Fear & Greed",
     )
 
     # Функция layout — Dash вызывает её при загрузке страницы (свежие данные из БД).
     dash_app.layout = _dash_layout
+    register_dash_callbacks(dash_app)
     return dash_app
 
 

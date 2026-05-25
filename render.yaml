@@ -31,6 +31,6 @@ services:
     startCommand: python scripts/trigger_fng_sync.py
     envVars:
       - key: SITE_BASE_URL
-        value: https://zatinatscky.com
+        value: https://ivan.zatinatscky.com
       - key: CRON_TOKEN
         value: CHANGE_ME_TO_RANDOM_LONG_TOKEN

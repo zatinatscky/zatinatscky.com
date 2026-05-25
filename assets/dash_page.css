@@ -1,0 +1,28 @@
+/* /dash/ — фон на весь viewport, без белых полей у body и корня React. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background-color: #0f1419;
+}
+
+#react-entry-point,
+._dash-loading {
+  min-height: 100vh;
+  background-color: #0f1419;
+}
+
+/* Синяя карточка вокруг главного графика — без принудительного height:100% на SVG Plotly */
+.fng-chart-wrap {
+  width: 100%;
+  background-color: #1a2332;
+  border-radius: 6px;
+  line-height: 0;
+}
+
+.fng-chart-wrap .fng-main-chart,
+.fng-chart-wrap .dash-graph {
+  width: 100% !important;
+  background-color: #1a2332 !important;
+}

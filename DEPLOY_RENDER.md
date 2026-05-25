@@ -5,7 +5,7 @@
 - `app.py` — Flask + Dash:
   - визитка: `/`, `/about.html`, …
   - дашборд: `/dash/`
-- `fng_data.py` — загрузка Fear & Greed, upsert в **PostgreSQL** (`DATABASE_URL`).
+- `fng_data.py` — загрузка Fear & Greed, upsert в **PostgreSQL** (`DATABASE_URL`); таблица **btc_usd_daily** (дневные свечи **Binance** Spot `GET /api/v3/klines`, пара BTCUSDT: close в USDT, объёмы base/quote — **без API-ключа**).
   - Локально **без** `DATABASE_URL` — fallback на SQLite в `./data/fear_greed.db`.
 - `scripts/update_fng_data.py` — ручная синхронизация (использует тот же `get_engine()`).
 - `scripts/trigger_fng_sync.py` — Render Cron дергает `/jobs/fng-sync` на web-сервисе.
@@ -61,3 +61,104 @@ python app.py
 ## Регистрация пользователей позже
 
 Таблица `fear_greed_index` живёт в той же БД — можно добавлять таблицы `users`, `sessions` и т.д. в том же Postgres или через миграции (Alembic).
+
+---
+
+## Субдомен `ivan.zatinatscky.com` (дашборд на Render)
+
+Схема: **корень `zatinatscky.com`** может оставаться на GitHub Pages (визитка), **`ivan.zatinatscky.com`** — только на **web-сервис Render** (`zatinatscky-site`). Конфликта нет: это разные DNS-записи.
+
+| URL | Куда ведёт |
+|-----|------------|
+| `https://zatinatscky.com/` | GitHub Pages (статика) |
+| `https://ivan.zatinatscky.com/` | Render — визитка из того же `app.py` |
+| `https://ivan.zatinatscky.com/dash/` | Render — Dash (Fear & Greed + BTC) |
+| `https://ivan.zatinatscky.com/health` | Render — проверка живости |
+
+### 1. Код в GitHub и деплой на Render
+
+1. Закоммитьте и запушьте актуальный `main` в репозиторий `zatinatscky/zatinatscky.com`.
+2. В [Render Dashboard](https://dashboard.render.com): **Blueprint** из `render.yaml` или уже созданный сервис **`zatinatscky-site`**.
+3. Дождитесь успешного **Deploy** (логи без ошибок, `GET /health` → `{"status":"ok"}` на URL вида `https://zatinatscky-site-xxxx.onrender.com/health`).
+
+### 2. Секреты и cron (обязательно)
+
+В **Environment** web-сервиса и cron-сервиса:
+
+| Переменная | Значение |
+|------------|----------|
+| `CRON_TOKEN` | Одна длинная случайная строка (**одинаковая** в web и cron) |
+| `SITE_BASE_URL` (только cron) | `https://ivan.zatinatscky.com` — после того как домен заработает |
+| `AUTO_SYNC_ON_START` | `true` (первая загрузка F&G + BTC в Postgres при старте) |
+
+`DATABASE_URL` Render подставляет сам из `zatinatscky-postgres`.
+
+Первый старт может занять **несколько минут** (Binance + история F&G). Смотрите **Logs** web-сервиса.
+
+### 3. Кастомный домен в Render
+
+1. Откройте сервис **`zatinatscky-site`** → **Settings** → **Custom Domains**.
+2. **Add Custom Domain** → введите `ivan.zatinatscky.com`.
+3. Render покажет, что добавить в DNS (обычно **CNAME**):
+
+   | Тип | Имя (host) | Значение (target) |
+   |-----|------------|-------------------|
+   | `CNAME` | `ivan` | `zatinatscky-site.onrender.com` *(точное имя смотрите в UI Render)* |
+
+4. Дождитесь статуса **Verified** и выпуска **TLS** (часто 5–30 минут, иногда до 48 ч).
+
+### 4. DNS у регистратора / Cloudflare
+
+Где управляется зона **`zatinatscky.com`** (Cloudflare, Namecheap, и т.д.):
+
+1. Добавьте запись **CNAME**: host **`ivan`** → target из шага 3 (хост Render).
+2. **Не** перенаправляйте весь `zatinatscky.com` на Render — только субдомен `ivan`.
+3. **Cloudflare**: для записи `ivan` часто надёжнее режим **DNS only** (серая тучка), пока Render не выдаст сертификат. Потом можно включить прокси (оранжевая туча), если HTTPS стабилен.
+
+Проверка с Mac:
+
+```bash
+dig ivan.zatinatscky.com CNAME +short
+curl -sI https://ivan.zatinatscky.com/health
+```
+
+Ожидается CNAME на `*.onrender.com` и ответ `200` с JSON `ok`.
+
+### 5. Обновить cron после домена
+
+В cron **`fear-greed-daily-sync`** задайте:
+
+```text
+SITE_BASE_URL=https://ivan.zatinatscky.com
+```
+
+И тот же `CRON_TOKEN`, что у web. Иначе ночной job будет бить старый URL.
+
+В `render.yaml` для удобства можно поменять дефолт `SITE_BASE_URL` на `https://ivan.zatinatscky.com` и сделать **Manual Deploy** / синхронизацию env из Blueprint.
+
+### 6. Ссылка с визитки
+
+На GitHub Pages (`index.html` / `en/index.html`) добавьте ссылку, например:
+
+```html
+<a href="https://ivan.zatinatscky.com/dash/">Fear & Greed dashboard</a>
+```
+
+### 7. Частые проблемы
+
+| Симптом | Что проверить |
+|---------|----------------|
+| Домен не верифицируется | CNAME только для `ivan`, без лишней A-записи на тот же host |
+| 502 / таймаут при старте | Логи: `full_refresh` на старте; увеличить `--timeout` в gunicorn (уже 120 с) |
+| Пустой `/dash/` | Postgres пустая — дождаться sync или вызвать `GET /jobs/fng-sync?token=...` |
+| Cron не обновляет данные | `SITE_BASE_URL` и `CRON_TOKEN` совпадают с web |
+
+### Чеклист
+
+- [ ] Web на Render: deploy OK, `/health` OK  
+- [ ] Postgres подключена, в логах есть BTC sync  
+- [ ] `ivan.zatinatscky.com` в Custom Domains → Verified  
+- [ ] CNAME `ivan` → `*.onrender.com`  
+- [ ] `https://ivan.zatinatscky.com/dash/` открывается  
+- [ ] Cron: `SITE_BASE_URL=https://ivan.zatinatscky.com`, тот же `CRON_TOKEN`  
+- [ ] Ссылка на дашборд на основном сайте (по желанию)
