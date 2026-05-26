@@ -71,7 +71,7 @@ python app.py
 | URL | Куда ведёт |
 |-----|------------|
 | `https://zatinatscky.com/` | GitHub Pages (статика) |
-| `https://ivan.zatinatscky.com/` | Render — визитка из того же `app.py` |
+| `https://ivan.zatinatscky.com/` | Render — редирект на `/dash/` (env `DASH_ROOT_HOST`) |
 | `https://ivan.zatinatscky.com/dash/` | Render — Dash (Fear & Greed + BTC) |
 | `https://ivan.zatinatscky.com/health` | Render — проверка живости |
 
@@ -88,6 +88,7 @@ python app.py
 | Переменная | Значение |
 |------------|----------|
 | `CRON_TOKEN` | Одна длинная случайная строка (**одинаковая** в web и cron) |
+| `DASH_ROOT_HOST` | `ivan.zatinatscky.com` — на этом Host `/` открывает Dash, не `index.html` |
 | `SITE_BASE_URL` (только cron) | `https://ivan.zatinatscky.com` — после того как домен заработает |
 | `AUTO_SYNC_ON_START` | `true` (первая загрузка F&G + BTC в Postgres при старте) |
 

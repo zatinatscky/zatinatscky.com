@@ -22,6 +22,8 @@ from fng_dash_layout import build_dashboard_layout, empty_dashboard_layout, regi
 
 ROOT_DIR = Path(__file__).resolve().parent
 CRON_TOKEN = os.getenv("CRON_TOKEN", "")
+# Если Host совпадает (например ivan.zatinatscky.com), корень / редиректит на /dash/.
+DASH_ROOT_HOST = os.getenv("DASH_ROOT_HOST", "").strip().lower()
 
 
 def _ensure_stdio_logging() -> None:
@@ -60,6 +62,11 @@ def create_server() -> Flask:
 
     @server.get("/")
     def home():
+        # На выделенном субдомене дашборда — сразу Dash, а не визитка.
+        if DASH_ROOT_HOST:
+            host = request.host.split(":", 1)[0].lower()
+            if host == DASH_ROOT_HOST:
+                return redirect("/dash/", code=302)
         return send_from_directory(ROOT_DIR, "index.html")
 
     @server.get("/about.html")

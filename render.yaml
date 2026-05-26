@@ -20,6 +20,8 @@ services:
           property: connectionString
       - key: CRON_TOKEN
         value: CHANGE_ME_TO_RANDOM_LONG_TOKEN
+      - key: DASH_ROOT_HOST
+        value: ivan.zatinatscky.com
 
   - type: cron
     name: fear-greed-daily-sync
