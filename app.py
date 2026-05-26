@@ -15,8 +15,8 @@ from pathlib import Path
 from dash import Dash
 from flask import Flask, abort, redirect, request, send_from_directory
 
-from fng_data import full_refresh, get_engine, load_fng_dataframe
-from fng_dash_layout import build_dashboard_layout, empty_dashboard_layout, register_dash_callbacks
+from fng_data import full_refresh, get_engine
+from fng_dash_layout import build_dashboard_shell_layout, register_dash_callbacks
 
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -147,17 +147,6 @@ def create_server() -> Flask:
     return server
 
 
-def _dash_layout():
-    """
-    Собирает layout при каждом открытии /fng/ в браузере (см. fng_dash_layout).
-    """
-    engine = get_engine()
-    df = load_fng_dataframe(engine)
-    if df.empty:
-        return empty_dashboard_layout()
-    return build_dashboard_layout(df)
-
-
 def build_dash(server: Flask) -> Dash:
     """Создает Dash-приложение поверх существующего Flask-сервера."""
     dash_app = Dash(
@@ -168,8 +157,8 @@ def build_dash(server: Flask) -> Dash:
         title="Crypto Fear & Greed",
     )
 
-    # Функция layout — Dash вызывает её при загрузке страницы (свежие данные из БД).
-    dash_app.layout = _dash_layout
+    # Оболочка сразу; данные и Plotly — в bootstrap-callback (см. fng_dash_layout).
+    dash_app.layout = build_dashboard_shell_layout()
     register_dash_callbacks(dash_app)
     return dash_app
 

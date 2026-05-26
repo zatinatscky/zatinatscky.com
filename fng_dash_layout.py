@@ -13,13 +13,20 @@ from dataclasses import dataclass
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dcc, html
+from dash.exceptions import PreventUpdate
 from plotly.subplots import make_subplots
 
-# Идентификаторы для callback фильтра по датам (см. register_dash_callbacks).
+from fng_data import get_engine, load_fng_dataframe
+
+# Идентификаторы Dash (shell, bootstrap, фильтр дат).
 DASH_DF_STORE_ID = "fng-dash-df-store"
 DASH_DATE_PICKER_ID = "fng-dash-date-picker"
 DASH_CHARTS_OUTLET_ID = "fng-dash-charts-outlet"
 DASH_RANGE_HINT_ID = "fng-dash-range-hint"
+FNG_URL_ID = "fng-url"
+FNG_TOP_ROW_ID = "fng-top-row"
+FNG_PAGE_META_ID = "fng-page-meta"
+FNG_PAGE_LOADING_ID = "fng-page-loading"
 
 # --- Тема (как в прототипе дашборда) ---
 BACKGROUND = "#0f1419"
@@ -1052,61 +1059,119 @@ def _page_top_row(df: pd.DataFrame) -> html.Div:
     )
 
 
-def build_dashboard_layout(df: pd.DataFrame) -> html.Div:
-    """
-    Полный layout: Store, верхняя строка 80/20 (методология | DatePickerRange), затем графики.
+def _fng_path_active(pathname: str | None) -> bool:
+    """True для маршрутов /fng/ (с учётом routes_pathname_prefix)."""
+    if not pathname:
+        return False
+    path = pathname.rstrip("/")
+    return path.endswith("/fng") or path == "/fng"
 
-    Callback по датам перерисовывает блок графиков без повторного запроса к БД.
-    """
-    df = prepare_df_for_charts(df)
-    if len(df) == 0:
-        return empty_dashboard_layout()
-    if compute_hero_stats(df) is None:
-        return empty_dashboard_layout()
 
-    core_cols = [
+def _core_columns(df: pd.DataFrame) -> list[str]:
+    return [
         c
         for c in ("date_utc", "value", "classification", "btc_usd", "btc_volume_btc", "btc_quote_usdt")
         if c in df.columns
     ]
-    records = dataframe_to_store_records(df[core_cols])
-    last_date = df["date_utc"].max().strftime("%Y-%m-%d")
 
-    page = html.Div(
+
+def _pack_dashboard_payload(df: pd.DataFrame) -> tuple[list | None, str, html.Div, html.Div]:
+    """
+    Готовит Store + мета + верхнюю строку + графики из уже загруженного DataFrame.
+
+    Возвращает кортеж для Outputs bootstrap-callback.
+    """
+    df = prepare_df_for_charts(df)
+    if len(df) == 0 or compute_hero_stats(df) is None:
+        return (
+            None,
+            "No chartable data in the database yet.",
+            html.Div(methodology_header(), style={"marginBottom": "12px"}),
+            html.Div("Waiting for a successful data sync.", style={"padding": "20px", "opacity": 0.9}),
+        )
+
+    records = dataframe_to_store_records(df[_core_columns(df)])
+    last_date = df["date_utc"].max().strftime("%Y-%m-%d")
+    meta = f"Full series: {len(df):,} observations · Last date (UTC): {last_date}"
+    return records, meta, _page_top_row(df), build_dashboard_inner(df)
+
+
+def build_dashboard_shell_layout() -> html.Div:
+    """
+    Лёгкая оболочка страницы /fng/: отдаётся сразу, без запроса к БД и без Plotly.
+
+    Данные и графики подгружаются в callback _bootstrap_dashboard (см. dcc.Loading).
+    """
+    return html.Div(
         [
-            dcc.Store(id=DASH_DF_STORE_ID, data=records),
+            dcc.Location(id=FNG_URL_ID, refresh=False),
+            dcc.Store(id=DASH_DF_STORE_ID, data=None),
             html.H1(
                 "Crypto Fear & Greed Dashboard",
                 style={"margin": "0 0 6px 0", "fontSize": "1.4rem"},
             ),
-            html.P(
-                f"Full series: {len(df):,} observations · Last date (UTC): {last_date}",
+            html.Div(
+                id=FNG_PAGE_META_ID,
+                children="Loading market data…",
                 style={"margin": "0 0 14px 0", "opacity": 0.85, "fontSize": "0.9rem"},
             ),
-            _page_top_row(df),
-            html.Div(
-                id=DASH_CHARTS_OUTLET_ID,
-                children=build_dashboard_inner(df),
+            dcc.Loading(
+                id=FNG_PAGE_LOADING_ID,
+                type="circle",
+                color=ACCENT,
+                className="fng-dash-loading",
+                children=html.Div(
+                    [
+                        html.Div(id=FNG_TOP_ROW_ID),
+                        html.Div(id=DASH_CHARTS_OUTLET_ID),
+                    ],
+                ),
             ),
         ],
         style=PAGE_SHELL_STYLE,
     )
-    return page
 
 
 def register_dash_callbacks(app: Dash) -> None:
     """
-    Регистрирует callback фильтра: DatePickerRange задаёт календарный срез ряда (UTC).
+    Bootstrap при открытии /fng/ и callback фильтра по DatePickerRange.
 
     Вызывать один раз после создания Dash(app).
     """
 
     @app.callback(
+        Output(DASH_DF_STORE_ID, "data"),
+        Output(FNG_PAGE_META_ID, "children"),
+        Output(FNG_TOP_ROW_ID, "children"),
         Output(DASH_CHARTS_OUTLET_ID, "children"),
+        Input(FNG_URL_ID, "pathname"),
+        prevent_initial_call=False,
+    )
+    def _bootstrap_dashboard(pathname: str | None) -> tuple:
+        if not _fng_path_active(pathname):
+            raise PreventUpdate
+
+        df = load_fng_dataframe(get_engine())
+        if df.empty:
+            return (
+                None,
+                "No data yet. Run a sync (or wait for the next scheduled job) and refresh.",
+                html.Div(methodology_header()),
+                html.Div(
+                    "Database is empty.",
+                    style={"padding": "20px", "opacity": 0.9},
+                ),
+            )
+
+        return _pack_dashboard_payload(df)
+
+    @app.callback(
+        Output(DASH_CHARTS_OUTLET_ID, "children", allow_duplicate=True),
         Output(DASH_RANGE_HINT_ID, "children"),
         Input(DASH_DATE_PICKER_ID, "start_date"),
         Input(DASH_DATE_PICKER_ID, "end_date"),
         State(DASH_DF_STORE_ID, "data"),
+        prevent_initial_call=True,
     )
     def _apply_date_picker_range(
         start_date: str | None,
