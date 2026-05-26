@@ -41,8 +41,35 @@ python app.py
 
 Проверка:
 
-- сайт: `http://127.0.0.1:8050/`
-- Fear & Greed: `http://127.0.0.1:8050/fng/`
+- визитка (Host `127.0.0.1`): `http://127.0.0.1:8050/`
+- welcome IVAN и Fear & Greed — см. ниже «Один localhost, два сайта»
+
+### Один localhost, два сайта
+
+Сервер смотрит на заголовок **Host**, а не на URL в адресной строке как на «разные сайты».
+
+| Что открыть | Host в запросе | Страница на `/` |
+|-------------|----------------|-----------------|
+| `http://127.0.0.1:8050/` | `127.0.0.1` | визитка (`index.html`) |
+| `http://ivan.zatinatscky.com:8050/` * | `ivan.zatinatscky.com` | welcome IVAN |
+| `http://127.0.0.1:8050/fng/` | любой | Fear & Greed Dash |
+
+\* Нужна строка в `/etc/hosts` (один раз):
+
+```text
+127.0.0.1 ivan.zatinatscky.com
+```
+
+Без правки hosts можно проверить welcome так:
+
+```bash
+curl -s -H "Host: ivan.zatinatscky.com" http://127.0.0.1:8050/ | head -3
+# ожидается: <!DOCTYPE html> ... lang="en" ... IVAN
+```
+
+Переменная **`DASH_ROOT_HOST`** (по умолчанию `ivan.zatinatscky.com`) задаёт Host для welcome. На `127.0.0.1` визитка открывается сама; чтобы welcome был на localhost без hosts, временно: `export DASH_ROOT_HOST=127.0.0.1`.
+
+На Render в **Environment** web-сервиса должно быть `DASH_ROOT_HOST=ivan.zatinatscky.com` (есть в `render.yaml`). Если переменной нет — после деплоя с default в коде welcome всё равно появится на субдомене.
 
 ## Настройка на Render (Blueprint)
 
@@ -149,6 +176,7 @@ SITE_BASE_URL=https://ivan.zatinatscky.com
 
 | Симптом | Что проверить |
 |---------|----------------|
+| На `ivan.*` визитка вместо welcome | Нет `DASH_ROOT_HOST` на Render или старый деплой — задать env и redeploy; в коде default `ivan.zatinatscky.com` |
 | Домен не верифицируется | CNAME только для `ivan`, без лишней A-записи на тот же host |
 | 502 / таймаут при старте | Логи: `full_refresh` на старте; увеличить `--timeout` в gunicorn (уже 120 с) |
 | Пустой `/fng/` | Postgres пустая — дождаться sync или вызвать `GET /jobs/fng-sync?token=...` |

@@ -22,8 +22,11 @@ from fng_dash_layout import build_dashboard_layout, empty_dashboard_layout, regi
 ROOT_DIR = Path(__file__).resolve().parent
 IVAN_DIR = ROOT_DIR / "ivan"
 CRON_TOKEN = os.getenv("CRON_TOKEN", "")
-# Субдомен продукта IVAN (ivan.zatinatscky.com): / — welcome, /fng/ — Fear & Greed.
-DASH_ROOT_HOST = os.getenv("DASH_ROOT_HOST", "").strip().lower()
+# Host, на котором / — welcome IVAN (не визитка). На Render задайте в Environment или оставьте default.
+DASH_ROOT_HOST = os.getenv("DASH_ROOT_HOST", "ivan.zatinatscky.com").strip().lower()
+# Пустая строка в env отключает привязку к субдомену (удобно для особых деплоев).
+if os.getenv("DASH_ROOT_HOST") == "":
+    DASH_ROOT_HOST = ""
 
 
 def _is_ivan_host() -> bool:
