@@ -28,7 +28,7 @@ TEXT_COLOR = "#e6edf3"
 ACCENT = "#58a6ff"
 BTC_LINE = "#f7931a"
 
-# Оболочка страницы /dash/: на всю ширину viewport (без max-width по центру).
+# Оболочка страницы /fng/: на всю ширину viewport (без max-width по центру).
 PAGE_SHELL_STYLE: dict = {
     "width": "100%",
     "maxWidth": "100%",

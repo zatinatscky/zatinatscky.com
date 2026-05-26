@@ -4,7 +4,7 @@
 
 - `app.py` — Flask + Dash:
   - визитка: `/`, `/about.html`, …
-  - дашборд: `/dash/`
+  - Fear & Greed: `/fng/`
 - `fng_data.py` — загрузка Fear & Greed, upsert в **PostgreSQL** (`DATABASE_URL`); таблица **btc_usd_daily** (дневные свечи **Binance** Spot `GET /api/v3/klines`, пара BTCUSDT: close в USDT, объёмы base/quote — **без API-ключа**).
   - Локально **без** `DATABASE_URL` — fallback на SQLite в `./data/fear_greed.db`.
 - `scripts/update_fng_data.py` — ручная синхронизация (использует тот же `get_engine()`).
@@ -42,7 +42,7 @@ python app.py
 Проверка:
 
 - сайт: `http://127.0.0.1:8050/`
-- дашборд: `http://127.0.0.1:8050/dash/`
+- Fear & Greed: `http://127.0.0.1:8050/fng/`
 
 ## Настройка на Render (Blueprint)
 
@@ -71,8 +71,8 @@ python app.py
 | URL | Куда ведёт |
 |-----|------------|
 | `https://zatinatscky.com/` | GitHub Pages (статика) |
-| `https://ivan.zatinatscky.com/` | Render — редирект на `/dash/` (env `DASH_ROOT_HOST`) |
-| `https://ivan.zatinatscky.com/dash/` | Render — Dash (Fear & Greed + BTC) |
+| `https://ivan.zatinatscky.com/` | Render — welcome IVAN (`ivan/welcome.html`, env `DASH_ROOT_HOST`) |
+| `https://ivan.zatinatscky.com/fng/` | Render — Fear & Greed + BTC |
 | `https://ivan.zatinatscky.com/health` | Render — проверка живости |
 
 ### 1. Код в GitHub и деплой на Render
@@ -88,7 +88,7 @@ python app.py
 | Переменная | Значение |
 |------------|----------|
 | `CRON_TOKEN` | Одна длинная случайная строка (**одинаковая** в web и cron) |
-| `DASH_ROOT_HOST` | `ivan.zatinatscky.com` — на этом Host `/` открывает Dash, не `index.html` |
+| `DASH_ROOT_HOST` | `ivan.zatinatscky.com` — на этом Host `/` — welcome IVAN, не `index.html` |
 | `SITE_BASE_URL` (только cron) | `https://ivan.zatinatscky.com` — после того как домен заработает |
 | `AUTO_SYNC_ON_START` | `true` (первая загрузка F&G + BTC в Postgres при старте) |
 
@@ -142,7 +142,7 @@ SITE_BASE_URL=https://ivan.zatinatscky.com
 На GitHub Pages (`index.html` / `en/index.html`) добавьте ссылку, например:
 
 ```html
-<a href="https://ivan.zatinatscky.com/dash/">Fear & Greed dashboard</a>
+<a href="https://ivan.zatinatscky.com/fng/">Fear & Greed dashboard</a>
 ```
 
 ### 7. Частые проблемы
@@ -151,7 +151,7 @@ SITE_BASE_URL=https://ivan.zatinatscky.com
 |---------|----------------|
 | Домен не верифицируется | CNAME только для `ivan`, без лишней A-записи на тот же host |
 | 502 / таймаут при старте | Логи: `full_refresh` на старте; увеличить `--timeout` в gunicorn (уже 120 с) |
-| Пустой `/dash/` | Postgres пустая — дождаться sync или вызвать `GET /jobs/fng-sync?token=...` |
+| Пустой `/fng/` | Postgres пустая — дождаться sync или вызвать `GET /jobs/fng-sync?token=...` |
 | Cron не обновляет данные | `SITE_BASE_URL` и `CRON_TOKEN` совпадают с web |
 
 ### Чеклист
@@ -160,6 +160,6 @@ SITE_BASE_URL=https://ivan.zatinatscky.com
 - [ ] Postgres подключена, в логах есть BTC sync  
 - [ ] `ivan.zatinatscky.com` в Custom Domains → Verified  
 - [ ] CNAME `ivan` → `*.onrender.com`  
-- [ ] `https://ivan.zatinatscky.com/dash/` открывается  
+- [ ] `https://ivan.zatinatscky.com/fng/` открывается  
 - [ ] Cron: `SITE_BASE_URL=https://ivan.zatinatscky.com`, тот же `CRON_TOKEN`  
 - [ ] Ссылка на дашборд на основном сайте (по желанию)

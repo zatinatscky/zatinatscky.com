@@ -1,9 +1,8 @@
 """
 Единая точка входа для Render:
-- отдает текущий статический сайт-визитку;
-- поднимает Dash на /dash/ с графиками Fear & Greed.
-
-Данные индекса хранятся в PostgreSQL (DATABASE_URL на Render).
+- отдает статический сайт-визитку (корень на onrender.com);
+- на DASH_ROOT_HOST (ivan.*) — welcome IVAN и дашборды (например /fng/);
+- данные индексов — PostgreSQL (DATABASE_URL на Render).
 """
 
 from __future__ import annotations
@@ -21,9 +20,18 @@ from fng_dash_layout import build_dashboard_layout, empty_dashboard_layout, regi
 
 
 ROOT_DIR = Path(__file__).resolve().parent
+IVAN_DIR = ROOT_DIR / "ivan"
 CRON_TOKEN = os.getenv("CRON_TOKEN", "")
-# Если Host совпадает (например ivan.zatinatscky.com), корень / редиректит на /dash/.
+# Субдомен продукта IVAN (ivan.zatinatscky.com): / — welcome, /fng/ — Fear & Greed.
 DASH_ROOT_HOST = os.getenv("DASH_ROOT_HOST", "").strip().lower()
+
+
+def _is_ivan_host() -> bool:
+    """True, если запрос на выделенный Host продукта IVAN."""
+    if not DASH_ROOT_HOST:
+        return False
+    host = request.host.split(":", 1)[0].lower()
+    return host == DASH_ROOT_HOST
 
 
 def _ensure_stdio_logging() -> None:
@@ -62,12 +70,15 @@ def create_server() -> Flask:
 
     @server.get("/")
     def home():
-        # На выделенном субдомене дашборда — сразу Dash, а не визитка.
-        if DASH_ROOT_HOST:
-            host = request.host.split(":", 1)[0].lower()
-            if host == DASH_ROOT_HOST:
-                return redirect("/dash/", code=302)
+        # На ivan.* — welcome продукта IVAN; на onrender.com — визитка из репозитория.
+        if _is_ivan_host():
+            return send_from_directory(IVAN_DIR, "welcome.html")
         return send_from_directory(ROOT_DIR, "index.html")
+
+    @server.get("/ivan/<path:filename>")
+    def ivan_static(filename: str):
+        """Статика welcome-страницы (CSS и будущие ассеты)."""
+        return send_from_directory(IVAN_DIR, filename)
 
     @server.get("/about.html")
     def about():
@@ -93,10 +104,20 @@ def create_server() -> Flask:
     def en_pages(filename: str):
         return send_from_directory(ROOT_DIR / "en", filename)
 
+    @server.get("/fng")
+    def fng_redirect():
+        # Канонический URL Fear & Greed Dash со слэшем в конце.
+        return redirect("/fng/", code=302)
+
     @server.get("/dash")
-    def dash_redirect():
-        # Канонический URL Dash со слэшем в конце.
-        return redirect("/dash/", code=302)
+    @server.get("/dash/")
+    def dash_legacy_redirect():
+        # Старый путь — редирект на /fng/.
+        return redirect("/fng/", code=301)
+
+    @server.get("/dash/<path:subpath>")
+    def dash_legacy_subpath_redirect(subpath: str):
+        return redirect(f"/fng/{subpath}", code=301)
 
     @server.get("/health")
     def health():
@@ -125,7 +146,7 @@ def create_server() -> Flask:
 
 def _dash_layout():
     """
-    Собирает layout при каждом открытии /dash/ в браузере (см. fng_dash_layout).
+    Собирает layout при каждом открытии /fng/ в браузере (см. fng_dash_layout).
     """
     engine = get_engine()
     df = load_fng_dataframe(engine)
@@ -139,7 +160,8 @@ def build_dash(server: Flask) -> Dash:
     dash_app = Dash(
         __name__,
         server=server,
-        routes_pathname_prefix="/dash/",
+        routes_pathname_prefix="/fng/",
+        requests_pathname_prefix="/fng/",
         title="Crypto Fear & Greed",
     )
 

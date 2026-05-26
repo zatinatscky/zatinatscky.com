@@ -1,0 +1,258 @@
+/* Welcome IVAN — те же токены, что у Dash Fear & Greed (#0f1419, #1a2332, #58a6ff). */
+:root {
+  --ivan-bg: #0f1419;
+  --ivan-card: #1a2332;
+  --ivan-text: #e6edf3;
+  --ivan-accent: #58a6ff;
+  --ivan-accent-dim: #7ec8ff;
+  --ivan-border: #30363d;
+  --ivan-muted: rgba(230, 237, 243, 0.72);
+  --ivan-glow: rgba(88, 166, 255, 0.18);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background-color: var(--ivan-bg);
+  color: var(--ivan-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+}
+
+/* Верхняя полоса — как шапка дашборда */
+.ivan-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--ivan-border);
+  background: linear-gradient(180deg, #141b24 0%, var(--ivan-bg) 100%);
+}
+
+.ivan-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ivan-logo {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ivan-accent);
+  margin: 0;
+}
+
+.ivan-tagline {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ivan-muted);
+  max-width: 28rem;
+}
+
+.ivan-topbar-link {
+  color: var(--ivan-accent);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ivan-topbar-link:hover {
+  color: var(--ivan-accent-dim);
+  text-decoration: underline;
+}
+
+.ivan-shell {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 22px 48px;
+}
+
+/* Герой: расшифровка аббревиатуры IVAN */
+.ivan-hero {
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) 1fr;
+  gap: 28px;
+  align-items: start;
+  margin-bottom: 36px;
+}
+
+@media (max-width: 720px) {
+  .ivan-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ivan-acronym {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ivan-letter-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--ivan-card);
+  border: 1px solid var(--ivan-border);
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--ivan-glow) inset;
+}
+
+.ivan-letter {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--ivan-accent);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.ivan-letter-word {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.ivan-hero-copy {
+  padding: 20px 24px;
+  background: var(--ivan-card);
+  border: 1px solid var(--ivan-border);
+  border-radius: 8px;
+}
+
+.ivan-hero-copy h2 {
+  margin: 0 0 12px;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ivan-text);
+}
+
+.ivan-hero-copy p {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: var(--ivan-muted);
+}
+
+.ivan-hero-copy p:last-child {
+  margin-bottom: 0;
+}
+
+/* Сетка индексов */
+.ivan-section-title {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.ivan-section-sub {
+  margin: 0 0 20px;
+  font-size: 0.88rem;
+  color: var(--ivan-muted);
+}
+
+.ivan-index-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.ivan-index-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+  background: var(--ivan-card);
+  border: 1px solid var(--ivan-border);
+  border-radius: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ivan-index-card:hover {
+  border-color: var(--ivan-accent);
+  box-shadow: 0 4px 24px var(--ivan-glow);
+}
+
+.ivan-index-card--soon {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.ivan-index-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ivan-index-card p {
+  margin: 0;
+  flex: 1;
+  font-size: 0.86rem;
+  color: var(--ivan-muted);
+}
+
+.ivan-badge {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ivan-badge--live {
+  background: rgba(64, 192, 87, 0.2);
+  color: #3ddc84;
+}
+
+.ivan-badge--soon {
+  background: rgba(230, 237, 243, 0.08);
+  color: var(--ivan-muted);
+}
+
+.ivan-index-cta {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--ivan-accent);
+  color: #0d1117;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+}
+
+.ivan-index-cta:hover {
+  background: var(--ivan-accent-dim);
+}
+
+.ivan-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ivan-border);
+  font-size: 0.8rem;
+  color: var(--ivan-muted);
+}
+
+.ivan-footer a {
+  color: var(--ivan-accent);
+}
