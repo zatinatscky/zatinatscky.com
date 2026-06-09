@@ -1,0 +1,11 @@
+# systemd-таймер: запускает fng-sync.service каждый день в 03:15 (время сервера).
+# Persistent=true — если сервер был выключен, запуск произойдёт после включения.
+[Unit]
+Description=Run IVAN Fear & Greed sync daily
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

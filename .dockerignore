@@ -1,0 +1,15 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+data/*.db
+node_modules
+# Локальное окружение и инфраструктура — внутрь образа не нужны.
+.env
+deploy/
+DEPLOY_*.md
+README*.md

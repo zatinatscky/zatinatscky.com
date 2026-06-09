@@ -1,0 +1,10 @@
+# systemd-сервис: разовый запуск синхронизации (вызывается таймером).
+# Установка: см. DEPLOY_VPS.md (копировать в /etc/systemd/system/).
+[Unit]
+Description=IVAN Fear & Greed daily sync
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/home/ivan/zatinatscky/deploy/fng-sync.sh
