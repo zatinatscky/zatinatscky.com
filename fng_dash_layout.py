@@ -1107,8 +1107,14 @@ def build_dashboard_shell_layout() -> html.Div:
             dcc.Location(id=FNG_URL_ID, refresh=False),
             dcc.Store(id=DASH_DF_STORE_ID, data=None),
             html.H1(
-                "Crypto Fear & Greed Dashboard",
+                "Crypto Fear & Greed Index",
                 style={"margin": "0 0 6px 0", "fontSize": "1.4rem"},
+            ),
+            # Вводный абзац с целевой фразой — текст для пользователей и поисковика.
+            html.P(
+                "Live crypto fear and greed index: a daily 0–100 market sentiment gauge with "
+                "full history and the Bitcoin (BTC) price and volume alongside it.",
+                style={"margin": "0 0 12px 0", "opacity": 0.9, "fontSize": "0.95rem", "maxWidth": "760px"},
             ),
             html.Div(
                 id=FNG_PAGE_META_ID,
