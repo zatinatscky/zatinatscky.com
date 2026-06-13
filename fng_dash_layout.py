@@ -1106,6 +1106,21 @@ def build_dashboard_shell_layout() -> html.Div:
         [
             dcc.Location(id=FNG_URL_ID, refresh=False),
             dcc.Store(id=DASH_DF_STORE_ID, data=None),
+            # Логотип-ссылка на главную (welcome IVAN). href="/" — обычная навигация вне Dash.
+            html.A(
+                "IVAN",
+                href="/",
+                title="IVAN — home",
+                style={
+                    "display": "inline-block",
+                    "marginBottom": "10px",
+                    "fontSize": "1.5rem",
+                    "fontWeight": "700",
+                    "letterSpacing": "0.14em",
+                    "color": ACCENT,
+                    "textDecoration": "none",
+                },
+            ),
             html.H1(
                 "Crypto Fear & Greed Index",
                 style={"margin": "0 0 6px 0", "fontSize": "1.4rem"},
