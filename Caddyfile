@@ -1,6 +1,7 @@
-# Caddy сам получает и продлевает TLS-сертификат Let's Encrypt для домена.
-# Условие: DNS-запись ivan.zatinatscky.com (A) указывает на IP сервера, порты 80/443 открыты.
+# Caddy сам получает и продлевает TLS-сертификаты Let's Encrypt для доменов.
+# Условие: A-записи доменов указывают на IP сервера, порты 80/443 открыты.
 
+# Субдомен продукта IVAN (welcome + дашборды).
 ivan.zatinatscky.com {
 	# Проксируем на web-контейнер по внутренней сети compose (имя сервиса = web).
 	reverse_proxy web:8050
@@ -11,3 +12,18 @@ ivan.zatinatscky.com {
 		output stdout
 	}
 }
+
+# Апекс — сайт-визитка консалтинга (тот же Flask, контент по Host).
+zatinatscky.com {
+	reverse_proxy web:8050
+	encode gzip zstd
+
+	log {
+		output stdout
+	}
+}
+
+# www → апекс (раскомментируйте, если заведёте DNS-запись www).
+# www.zatinatscky.com {
+# 	redir https://zatinatscky.com{uri} permanent
+# }

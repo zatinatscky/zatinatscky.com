@@ -58,6 +58,44 @@ body {
   filter: none;
 }
 
+/* Skeleton-карточки: показываем контур дашборда, пока грузятся данные. */
+.fng-skeleton-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+}
+
+.fng-skeleton {
+  background: linear-gradient(90deg, #1a2332 25%, #243049 37%, #1a2332 63%);
+  background-size: 400% 100%;
+  animation: fng-shimmer 1.4s ease infinite;
+  border-radius: 12px;
+  border: 1px solid #30363d;
+}
+
+.fng-skeleton--sidebar {
+  flex: 0 0 22%;
+  min-width: 240px;
+  max-width: 360px;
+  height: 520px;
+}
+
+.fng-skeleton--chart {
+  flex: 1 1 480px;
+  min-width: min(100%, 480px);
+  height: 520px;
+}
+
+@keyframes fng-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fng-skeleton { animation: none; }
+}
+
 /* Синяя карточка вокруг главного графика — без принудительного height:100% на SVG Plotly */
 .fng-chart-wrap {
   width: 100%;

@@ -4,49 +4,72 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IVAN — Index Volatility Alerts &amp; Notifications</title>
-  <meta name="description" content="IVAN aggregates crypto market indexes and dashboards in one place." />
+  <meta name="description" content="IVAN aggregates crypto market indexes and dashboards in one place: live crypto fear and greed index, history, and Bitcoin context." />
+
+  <!-- Тему применяем ДО отрисовки, чтобы не было вспышки (FOUC). -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("ivan-theme");
+        if (t) document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="IVAN" />
+  <meta property="og:title" content="IVAN — crypto market indexes in one place" />
+  <meta property="og:description" content="Live crypto fear and greed index with history and Bitcoin context." />
+  <meta property="og:url" content="https://ivan.zatinatscky.com/" />
+  <meta property="og:image" content="https://ivan.zatinatscky.com/ivan/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="/ivan/favicon.png" />
+  <link rel="canonical" href="https://ivan.zatinatscky.com/" />
+
+  <!-- Self-hosted Inter: предзагрузка woff2 для быстрого первого рендера. -->
+  <link rel="preload" href="/ivan/fonts/inter-latin-variable.woff2" as="font" type="font/woff2" crossorigin />
+
   <link rel="stylesheet" href="/ivan/welcome.css" />
 </head>
 <body>
   <header class="ivan-topbar">
     <div class="ivan-brand">
-      <h1 class="ivan-logo">IVAN</h1>
+      <a class="ivan-logo" href="/">IVAN</a>
       <p class="ivan-tagline">Index Volatility Alerts &amp; Notifications</p>
     </div>
-    <a class="ivan-topbar-link" href="https://zatinatscky.com/" target="_blank" rel="noopener noreferrer">zatinatscky.com</a>
+    <div class="ivan-topbar-actions">
+      <a class="ivan-topbar-link" href="https://zatinatscky.com/" target="_blank" rel="noopener noreferrer">zatinatscky.com</a>
+      <button class="ivan-theme-toggle" id="ivan-theme-toggle" type="button" aria-label="Toggle light/dark theme" title="Toggle theme">
+        <span id="ivan-theme-icon" aria-hidden="true">☾</span>
+      </button>
+    </div>
   </header>
 
   <main class="ivan-shell">
-    <section class="ivan-hero" aria-labelledby="ivan-intro">
-      <div class="ivan-acronym" aria-label="IVAN acronym">
-        <div class="ivan-letter-card">
-          <span class="ivan-letter" aria-hidden="true">I</span>
-          <span class="ivan-letter-word">Index</span>
-        </div>
-        <div class="ivan-letter-card">
-          <span class="ivan-letter" aria-hidden="true">V</span>
-          <span class="ivan-letter-word">Volatility</span>
-        </div>
-        <div class="ivan-letter-card">
-          <span class="ivan-letter" aria-hidden="true">A</span>
-          <span class="ivan-letter-word">Alerts &amp;</span>
-        </div>
-        <div class="ivan-letter-card">
-          <span class="ivan-letter" aria-hidden="true">N</span>
-          <span class="ivan-letter-word">Notifications</span>
-        </div>
-      </div>
+    <section class="ivan-hero">
+      <!-- Живая карточка: текущее значение Fear & Greed + спарклайн -->
+      <a class="ivan-live" href="/fng/" aria-label="Open Fear and Greed dashboard">
+        <span class="ivan-live-label"><span class="ivan-live-dot"></span> Crypto Fear &amp; Greed · now</span>
+        <span class="ivan-live-value ivan-skeleton" id="ivan-live-value">00</span>
+        <span class="ivan-live-zone ivan-skeleton" id="ivan-live-zone">Loading</span>
+        <svg class="ivan-spark" id="ivan-spark" viewBox="0 0 300 48" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <span class="ivan-live-meta" id="ivan-live-meta">Last 30 days</span>
+      </a>
 
-      <div class="ivan-hero-copy" id="ivan-intro">
-        <h2>Welcome to Ivan</h2>
+      <div class="ivan-hero-copy">
+        <h1>Crypto indexes, one clean home</h1>
         <p>
-          A single home for market sentiment and volatility indexes — interactive charts,
+          IVAN brings market sentiment and volatility indexes together — interactive charts,
           historical context, and room to grow into alerts when you need them.
         </p>
-        <p>
-          Pick an index below to open its dashboard. More data sources will be added over time
-          on this subdomain.
-        </p>
+        <div class="ivan-acronym" aria-label="IVAN stands for Index, Volatility, Alerts and Notifications">
+          <span class="ivan-chip"><b>I</b> Index</span>
+          <span class="ivan-chip"><b>V</b> Volatility</span>
+          <span class="ivan-chip"><b>A</b> Alerts &amp;</span>
+          <span class="ivan-chip"><b>N</b> Notifications</span>
+        </div>
       </div>
     </section>
 
@@ -55,25 +78,40 @@
       <p class="ivan-section-sub">Available dashboards and planned additions.</p>
 
       <div class="ivan-index-grid">
-        <article class="ivan-index-card">
+        <article class="ivan-index-card ivan-index-card--featured">
+          <div class="ivan-card-head">
+            <span class="ivan-card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 18 0"/><path d="M12 12l4-2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>
+            </span>
+            <h3>Crypto Fear &amp; Greed</h3>
+          </div>
           <span class="ivan-badge ivan-badge--live">Live</span>
-          <h3>Crypto Fear &amp; Greed</h3>
           <p>
-            Daily sentiment index (Alternative.me) with BTC/USDT close and volume from Binance —
-            gauge, dual-axis chart, and history filters.
+            Daily 0–100 sentiment index (Alternative.me) with BTC/USDT close and volume from
+            Binance — interactive gauge, dual-axis chart, and date-range history filters.
           </p>
-          <a class="ivan-index-cta" href="/fng/">Open dashboard</a>
+          <a class="ivan-index-cta" href="/fng/">Open dashboard →</a>
         </article>
 
         <article class="ivan-index-card ivan-index-card--soon">
+          <div class="ivan-card-head">
+            <span class="ivan-card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-7"/><path d="M14 8h6v6"/></svg>
+            </span>
+            <h3>Volatility suite</h3>
+          </div>
           <span class="ivan-badge ivan-badge--soon">Coming soon</span>
-          <h3>Volatility suite</h3>
           <p>Cross-asset volatility snapshots and regime labels for quick scanning.</p>
         </article>
 
         <article class="ivan-index-card ivan-index-card--soon">
+          <div class="ivan-card-head">
+            <span class="ivan-card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </span>
+            <h3>Custom alerts</h3>
+          </div>
           <span class="ivan-badge ivan-badge--soon">Coming soon</span>
-          <h3>Custom alerts</h3>
           <p>Threshold and move-based notifications tied to the indexes you follow.</p>
         </article>
       </div>
@@ -87,5 +125,95 @@
       </p>
     </footer>
   </main>
+
+  <script>
+    // ---- Переключатель темы ----
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById("ivan-theme-toggle");
+      var icon = document.getElementById("ivan-theme-icon");
+
+      function current() {
+        if (root.getAttribute("data-theme")) return root.getAttribute("data-theme");
+        return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+      }
+      function render() {
+        icon.textContent = current() === "light" ? "☀" : "☾";
+      }
+      btn.addEventListener("click", function () {
+        var next = current() === "light" ? "dark" : "light";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("ivan-theme", next); } catch (e) {}
+        render();
+      });
+      render();
+    })();
+
+    // ---- Живые данные Fear & Greed для hero ----
+    (function () {
+      var elValue = document.getElementById("ivan-live-value");
+      var elZone = document.getElementById("ivan-live-zone");
+      var elMeta = document.getElementById("ivan-live-meta");
+      var elSpark = document.getElementById("ivan-spark");
+
+      // Цвет зоны по значению (совпадает с токенами темы).
+      function zoneInfo(v) {
+        if (v < 25) return { name: "Extreme Fear", color: "var(--fear)" };
+        if (v < 50) return { name: "Fear", color: "var(--fear)" };
+        if (v === 50) return { name: "Neutral", color: "var(--neutral)" };
+        if (v < 75) return { name: "Greed", color: "var(--greed)" };
+        return { name: "Extreme Greed", color: "var(--greed)" };
+      }
+
+      // Плавный счёт числа от 0 до значения.
+      function countUp(el, target) {
+        var start = performance.now(), dur = 900;
+        function step(now) {
+          var p = Math.min(1, (now - start) / dur);
+          el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      // Рисуем спарклайн как polyline в SVG (300x48).
+      function drawSpark(series, color) {
+        if (!series || series.length < 2) return;
+        var w = 300, h = 48, pad = 3;
+        var min = Math.min.apply(null, series), max = Math.max.apply(null, series);
+        var span = (max - min) || 1;
+        var pts = series.map(function (v, i) {
+          var x = pad + (i * (w - 2 * pad)) / (series.length - 1);
+          var y = h - pad - ((v - min) / span) * (h - 2 * pad);
+          return x.toFixed(1) + "," + y.toFixed(1);
+        }).join(" ");
+        elSpark.innerHTML =
+          '<polyline points="' + pts + '" fill="none" stroke="' + color +
+          '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+      }
+
+      fetch("/api/fng/latest")
+        .then(function (r) { if (!r.ok) throw new Error("bad status"); return r.json(); })
+        .then(function (data) {
+          var v = data.value;
+          var z = zoneInfo(v);
+          elValue.classList.remove("ivan-skeleton");
+          elZone.classList.remove("ivan-skeleton");
+          elZone.textContent = z.name;
+          elZone.style.color = z.color;
+          elZone.style.background = "color-mix(in srgb, " + z.color + " 18%, transparent)";
+          if (data.date) elMeta.textContent = "Last 30 days · updated " + data.date;
+          countUp(elValue, v);
+          drawSpark(data.history || [], z.color);
+        })
+        .catch(function () {
+          elValue.classList.remove("ivan-skeleton");
+          elZone.classList.remove("ivan-skeleton");
+          elValue.textContent = "—";
+          elZone.textContent = "Open dashboard";
+          elZone.style.color = "var(--accent)";
+        });
+    })();
+  </script>
 </body>
 </html>

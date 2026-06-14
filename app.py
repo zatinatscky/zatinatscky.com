@@ -15,6 +15,7 @@ from pathlib import Path
 
 from dash import Dash
 from flask import Flask, Response, abort, redirect, request, send_from_directory
+from sqlalchemy import text
 
 from fng_data import full_refresh, get_engine
 from fng_dash_layout import build_dashboard_shell_layout, register_dash_callbacks
@@ -104,6 +105,11 @@ def create_server() -> Flask:
     def js(filename: str):
         return send_from_directory(ROOT_DIR / "js", filename)
 
+    @server.get("/en/")
+    def en_home():
+        # GitHub Pages отдавал /en/ как index.html; на Flask нужен явный роут.
+        return send_from_directory(ROOT_DIR / "en", "index.html")
+
     @server.get("/en/<path:filename>")
     def en_pages(filename: str):
         return send_from_directory(ROOT_DIR / "en", filename)
@@ -127,35 +133,68 @@ def create_server() -> Flask:
     def health():
         return {"status": "ok"}
 
+    @server.get("/api/fng/latest")
+    def api_fng_latest():
+        """Последнее значение Fear & Greed + ряд за 30 дней (для живого hero на welcome)."""
+        try:
+            engine = get_engine()
+            with engine.connect() as conn:
+                rows = conn.execute(
+                    text(
+                        "SELECT date_utc, value, classification "
+                        "FROM fear_greed_index ORDER BY date_utc DESC LIMIT 30"
+                    )
+                ).fetchall()
+        except Exception:
+            return {"error": "unavailable"}, 503
+
+        if not rows:
+            return {"error": "no data"}, 404
+
+        ordered = list(reversed(rows))  # из убывания дат → в хронологический порядок
+        latest = ordered[-1]
+        return {
+            "value": int(latest[1]),
+            "classification": str(latest[2] or ""),
+            "date": str(latest[0])[:10],
+            "history": [int(r[1]) for r in ordered],
+        }
+
     @server.get("/robots.txt")
     def robots_txt():
-        """Разрешаем индексацию и указываем путь к sitemap."""
-        body = (
-            "User-agent: *\n"
-            "Allow: /\n"
-            "Sitemap: https://ivan.zatinatscky.com/sitemap.xml\n"
-        )
-        return Response(body, mimetype="text/plain")
+        """robots зависит от Host: ivan.* — продукт, апекс — статический файл консалтинга."""
+        if _is_ivan_host():
+            body = (
+                "User-agent: *\n"
+                "Allow: /\n"
+                "Sitemap: https://ivan.zatinatscky.com/sitemap.xml\n"
+            )
+            return Response(body, mimetype="text/plain")
+        # Апекс zatinatscky.com — robots из репозитория (консалтинг).
+        return send_from_directory(ROOT_DIR, "robots.txt")
 
     @server.get("/sitemap.xml")
     def sitemap_xml():
-        """Карта сайта для поисковиков: welcome и страница индекса."""
-        pages = [
-            ("https://ivan.zatinatscky.com/", "1.0", "weekly"),
-            ("https://ivan.zatinatscky.com/fng/", "0.9", "daily"),
-        ]
-        items = "".join(
-            f"<url><loc>{loc}</loc>"
-            f"<changefreq>{freq}</changefreq>"
-            f"<priority>{pr}</priority></url>"
-            for loc, pr, freq in pages
-        )
-        xml = (
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-            f"{items}</urlset>"
-        )
-        return Response(xml, mimetype="application/xml")
+        """sitemap зависит от Host: ivan.* — дашборды, апекс — статический файл консалтинга."""
+        if _is_ivan_host():
+            pages = [
+                ("https://ivan.zatinatscky.com/", "1.0", "weekly"),
+                ("https://ivan.zatinatscky.com/fng/", "0.9", "daily"),
+            ]
+            items = "".join(
+                f"<url><loc>{loc}</loc>"
+                f"<changefreq>{freq}</changefreq>"
+                f"<priority>{pr}</priority></url>"
+                for loc, pr, freq in pages
+            )
+            xml = (
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                f"{items}</urlset>"
+            )
+            return Response(xml, mimetype="application/xml")
+        # Апекс zatinatscky.com — sitemap из репозитория (консалтинг).
+        return send_from_directory(ROOT_DIR, "sitemap.xml")
 
     @server.get("/jobs/fng-sync")
     def sync_job():
@@ -206,10 +245,12 @@ FNG_META_TAGS = [
     {"property": "og:title", "content": FNG_PAGE_TITLE},
     {"property": "og:description", "content": FNG_PAGE_DESCRIPTION},
     {"property": "og:url", "content": FNG_PAGE_URL},
+    {"property": "og:image", "content": f"{SITE_BASE_URL_PUBLIC}/ivan/og-image.png"},
     # Twitter Card.
     {"name": "twitter:card", "content": "summary_large_image"},
     {"name": "twitter:title", "content": FNG_PAGE_TITLE},
     {"name": "twitter:description", "content": FNG_PAGE_DESCRIPTION},
+    {"name": "twitter:image", "content": f"{SITE_BASE_URL_PUBLIC}/ivan/og-image.png"},
 ]
 
 # Структурированные данные: тип приложения + FAQ (шанс на rich snippet в Google).
@@ -285,6 +326,7 @@ FNG_INDEX_STRING = (
     "{%metas%}\n"
     "<title>{%title%}</title>\n"
     f'<link rel="canonical" href="{FNG_PAGE_URL}" />\n'
+    '<link rel="icon" type="image/png" href="/ivan/favicon.png" />\n'
     "{%favicon%}\n"
     "{%css%}\n"
     f'<script type="application/ld+json">{FNG_JSONLD}</script>\n'

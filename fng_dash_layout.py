@@ -1144,7 +1144,17 @@ def build_dashboard_shell_layout() -> html.Div:
                 children=html.Div(
                     [
                         html.Div(id=FNG_TOP_ROW_ID),
-                        html.Div(id=DASH_CHARTS_OUTLET_ID),
+                        # Skeleton-контур до прихода данных; bootstrap-callback заменит children на графики.
+                        html.Div(
+                            html.Div(
+                                [
+                                    html.Div(className="fng-skeleton fng-skeleton--sidebar"),
+                                    html.Div(className="fng-skeleton fng-skeleton--chart"),
+                                ],
+                                className="fng-skeleton-wrap",
+                            ),
+                            id=DASH_CHARTS_OUTLET_ID,
+                        ),
                     ],
                 ),
             ),

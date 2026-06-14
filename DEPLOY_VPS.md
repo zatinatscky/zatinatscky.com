@@ -175,6 +175,28 @@ docker compose logs -f web
 
 ---
 
+## Перенос апекса zatinatscky.com на сервер (с GitHub Pages)
+
+Тот же Flask отдаёт визитку консалтинга по Host (контент не меняется, дизайн сохранён).
+Caddy уже настроен на оба домена (см. `Caddyfile`).
+
+1. Задеплоить актуальный код: `git pull && docker compose up -d --build`.
+2. В Cloudflare → DNS зоны `zatinatscky.com`:
+   - **Удалить** 4 A-записи апекса на GitHub Pages (`185.199.108–111.153`).
+   - **Добавить** одну A-запись: `@` → `13.140.157.222`, **DNS only** (серая туча) на время выпуска TLS.
+   - Запись **TXT** `google-site-verification=...` — оставить.
+   - `www`: либо удалить, либо `CNAME www → zatinatscky.com` (и раскомментировать www-блок в `Caddyfile`).
+3. В GitHub → репозиторий → **Settings → Pages**: убрать кастомный домен (чтобы Pages не «держал» домен).
+4. Дождаться, пока Caddy выпустит сертификат: `docker compose logs -f caddy`.
+5. Проверить:
+
+```bash
+dig zatinatscky.com A +short        # 13.140.157.222
+curl -sI https://zatinatscky.com/   # 200, x-render? нет — gunicorn/caddy
+```
+
+> Файл `CNAME` в репозитории нужен только GitHub Pages; на работу VPS он не влияет.
+
 ## Частые команды
 
 | Действие | Команда |
