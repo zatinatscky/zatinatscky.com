@@ -604,7 +604,7 @@
             y: by + (P ? 72 : 54),
             style: { fontFamily: "'IBM Plex Mono'", fontSize: 11, fill: 'var(--text-faint)' },
           },
-          'Vol $' + IV.kfmt(vv)
+          'Volume $' + IV.kfmt(vv)
         )
       );
     }

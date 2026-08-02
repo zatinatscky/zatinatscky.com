@@ -157,7 +157,12 @@
 
         if (e.key === '/') {
           e.preventDefault();
-          if (self._search && self.page() === 'home') self._search.focus();
+          // В прототипе / всегда ведёт на home + фокус поиска.
+          if (self.page() !== 'home') {
+            IVAN.goHome();
+            return;
+          }
+          if (self._search) self._search.focus();
           return;
         }
 
