@@ -27,3 +27,13 @@ zatinatscky.com {
 # www.zatinatscky.com {
 # 	redir https://zatinatscky.com{uri} permanent
 # }
+
+# rhyme_analyzer — разбор рифм (контейнер hiphop-web в сети compose IVAN).
+hiphop.zatinatscky.com {
+	reverse_proxy hiphop-web:8000
+	encode gzip zstd
+
+	log {
+		output stdout
+	}
+}

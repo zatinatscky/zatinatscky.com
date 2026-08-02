@@ -1,0 +1,30 @@
+/* Базовые стили и keyframes из прототипа IVAN Terminal */
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;overflow-x:hidden;}
+body{background:#EBEBEB;}
+a{color:inherit;}
+a:hover{color:inherit;}
+::selection{background:rgba(221,186,155,.5);}
+table{border-spacing:0;}
+input::placeholder{color:var(--text-faint);}
+
+@keyframes ivpulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+@keyframes ivwRise{from{transform:translateY(115%) rotate(3deg);}to{transform:none;}}
+@keyframes ivwUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+@keyframes ivwFade{from{opacity:0;}to{opacity:1;}}
+@keyframes ivwLine{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+@keyframes ivwMarq{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+@keyframes ivwDrift{from{transform:translateY(18px);}to{transform:translateY(-46px);}}
+@keyframes ivwOut{to{opacity:0;transform:scale(1.045);filter:blur(7px);}}
+@keyframes ivwSweep{from{opacity:0;transform:translateY(30px) scale(.94);}to{opacity:1;transform:none;}}
+@keyframes ivwLift{to{opacity:0;transform:scale(1.05);}}
+@keyframes ivwCenterOut{to{opacity:0;transform:translateY(-28px) scale(.95);filter:blur(5px);}}
+@keyframes ivwEnter{from{opacity:0;transform:translateY(16px) scale(.992);}to{opacity:1;transform:none;}}
+@keyframes ivwCard{from{opacity:0;transform:translateY(26px) scale(.965);}to{opacity:1;transform:none;}}
+
+[data-tagbtn]:hover{background:var(--accent) !important;color:var(--on-accent) !important;}
+[data-watchbtn] [data-wlabel]{display:inline-block;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width .32s cubic-bezier(.16,1,.3,1),opacity .22s,margin-left .32s;}
+[data-watchbtn]:hover [data-wlabel]{max-width:150px;opacity:1;margin-left:9px;}
+
+::-webkit-scrollbar{width:11px;height:11px;}
+::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:6px;border:3px solid transparent;background-clip:content-box;}

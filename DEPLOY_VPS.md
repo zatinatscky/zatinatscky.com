@@ -197,6 +197,18 @@ curl -sI https://zatinatscky.com/   # 200, x-render? нет — gunicorn/caddy
 
 > Файл `CNAME` в репозитории нужен только GitHub Pages; на работу VPS он не влияет.
 
+---
+
+## Соседний сервис: rhyme_analyzer (hiphop)
+
+Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `hiphop-web:8000` (отдельный compose в `~/hiphop`).
+
+1. DNS: A-запись `hiphop` → IP сервера (серая туча).
+2. `git pull` здесь — в `Caddyfile` уже есть блок `hiphop.zatinatscky.com`; `docker compose restart caddy`.
+3. На сервере: см. **`~/hiphop/DEPLOY_VPS.md`** — `docker compose -f docker-compose.vps.yml up -d --build`.
+
+Проверка: `https://hiphop.zatinatscky.com/health` → `{"status":"ok",...}`.
+
 ## Частые команды
 
 | Действие | Команда |

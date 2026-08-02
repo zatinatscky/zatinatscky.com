@@ -1,8 +1,8 @@
 """
-Единая точка входа для Render:
-- отдает статический сайт-визитку (корень на onrender.com);
-- на DASH_ROOT_HOST (ivan.*) — welcome IVAN и дашборды (например /fng/);
-- данные индексов — PostgreSQL (DATABASE_URL на Render).
+Единая точка входа (VPS / локально):
+- отдает статический сайт-визитку на апексе (zatinatscky.com);
+- на DASH_ROOT_HOST (ivan.*) — IVAN Terminal (home + /i/<id>) и дашборды (/fng/);
+- данные индексов — PostgreSQL (DATABASE_URL).
 """
 
 from __future__ import annotations
@@ -23,6 +23,33 @@ from fng_dash_layout import build_dashboard_shell_layout, register_dash_callback
 
 ROOT_DIR = Path(__file__).resolve().parent
 IVAN_DIR = ROOT_DIR / "ivan"
+# Id индексов IVAN Terminal (должен совпадать с ivan/js/mock-data.js INDEX_IDS).
+IVAN_INDEX_IDS = frozenset(
+    {
+        "fng",
+        "altseason",
+        "btcdom",
+        "bvol",
+        "nupl",
+        "ssr",
+        "funding",
+        "mvrv",
+        "vix",
+        "spx",
+        "stoxx",
+        "nikkei",
+        "cnnfng",
+        "gold",
+        "brent",
+        "bcom",
+        "us10y",
+        "uscpi",
+        "cnpmi",
+        "ifo",
+        "gscpi",
+        "dxy",
+    }
+)
 CRON_TOKEN = os.getenv("CRON_TOKEN", "")
 # Host, на котором / — welcome IVAN (не визитка). На Render задайте в Environment или оставьте default.
 DASH_ROOT_HOST = os.getenv("DASH_ROOT_HOST", "ivan.zatinatscky.com").strip().lower()
@@ -75,14 +102,24 @@ def create_server() -> Flask:
 
     @server.get("/")
     def home():
-        # На ivan.* — welcome продукта IVAN; на onrender.com — визитка из репозитория.
+        # На ivan.* — production home IVAN Terminal; иначе — визитка консалтинга.
         if _is_ivan_host():
-            return send_from_directory(IVAN_DIR, "welcome.html")
+            return send_from_directory(IVAN_DIR, "home.html")
         return send_from_directory(ROOT_DIR, "index.html")
+
+    @server.get("/i/<index_id>")
+    def ivan_index_detail(index_id: str):
+        """Страница индекса: detail.html с подстановкой id; 404 для неизвестных id."""
+        if index_id not in IVAN_INDEX_IDS:
+            abort(404)
+        detail_path = IVAN_DIR / "detail.html"
+        html = detail_path.read_text(encoding="utf-8")
+        html = html.replace("{{INDEX_ID}}", index_id)
+        return Response(html, mimetype="text/html; charset=utf-8")
 
     @server.get("/ivan/<path:filename>")
     def ivan_static(filename: str):
-        """Статика welcome-страницы (CSS и будущие ассеты)."""
+        """Статика IVAN: js/css, home/detail, favicon, og-image."""
         return send_from_directory(IVAN_DIR, filename)
 
     @server.get("/about.html")
@@ -212,7 +249,7 @@ def create_server() -> Flask:
 
     @server.errorhandler(404)
     def not_found(_err):
-        abort(404)
+        return Response("Not Found", status=404, mimetype="text/plain")
 
     return server
 
