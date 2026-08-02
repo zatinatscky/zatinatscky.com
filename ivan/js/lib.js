@@ -287,6 +287,8 @@
    * Локально можно открыть `/ivan/home.html` без Host — запоминаем путь возврата.
    */
   var LS_HOME = 'ivan_home_url';
+  var LS_CAT = 'ivan_cat';
+  var LS_LAYOUT = 'ivan_layout';
 
   function homeUrl() {
     try {
@@ -296,6 +298,53 @@
     // Если сейчас смотрим статику /ivan/* — возвращаемся туда же.
     if (location.pathname.indexOf('/ivan/') === 0) return '/ivan/home.html';
     return '/';
+  }
+
+  /** Базовый URL home без query */
+  function homeUrlBase() {
+    var u = homeUrl();
+    var q = u.indexOf('?');
+    return q >= 0 ? u.slice(0, q) : u;
+  }
+
+  /** Переход на home с фильтром ?cat=… (как page:'home'+cat в прототипе). */
+  function goHomeWithFilter(cat) {
+    try {
+      if (cat && cat !== 'all') sessionStorage.setItem(LS_CAT, cat);
+      else sessionStorage.removeItem(LS_CAT);
+    } catch (e) {}
+    var base = homeUrlBase();
+    if (cat && cat !== 'all') {
+      window.location.href = base + '?cat=' + encodeURIComponent(cat);
+    } else {
+      window.location.href = base;
+    }
+  }
+
+  /** Прочитать стартовый фильтр: ?cat=… или sessionStorage */
+  function readInitialCat() {
+    try {
+      var params = new URLSearchParams(location.search || '');
+      var fromUrl = params.get('cat');
+      if (fromUrl) return fromUrl;
+      return sessionStorage.getItem(LS_CAT) || 'all';
+    } catch (e) {
+      return 'all';
+    }
+  }
+
+  function readInitialLayout() {
+    try {
+      var lay = sessionStorage.getItem(LS_LAYOUT);
+      if (lay === 'grid' || lay === 'table') return lay;
+    } catch (e) {}
+    return 'grid';
+  }
+
+  function saveLayout(layout) {
+    try {
+      sessionStorage.setItem(LS_LAYOUT, layout);
+    } catch (e) {}
   }
 
   /** Переход на страницу индекса с сохранением scroll и URL home */
@@ -314,7 +363,7 @@
   }
 
   function goHome() {
-    window.location.href = homeUrl();
+    window.location.href = homeUrlBase();
   }
 
   function restoreHomeScroll() {
@@ -371,6 +420,10 @@
     setWelcomeDismissed: setWelcomeDismissed,
     navigateToIndex: navigateToIndex,
     goHome: goHome,
+    goHomeWithFilter: goHomeWithFilter,
+    readInitialCat: readInitialCat,
+    readInitialLayout: readInitialLayout,
+    saveLayout: saveLayout,
     restoreHomeScroll: restoreHomeScroll,
     relChg: relChg,
     rangePos: rangePos,

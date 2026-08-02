@@ -51,9 +51,16 @@
         theme: (props && props.theme) || 'light',
         // Handoff default accent (#DDBA9B) — линии графиков, CTA, chips.
         accent: (props && props.accent) || '#DDBA9B',
-        layout: (props && props.layout) || 'grid',
+        layout:
+          typeof IVAN !== 'undefined' && IVAN.readInitialLayout
+            ? IVAN.readInitialLayout()
+            : (props && props.layout) || 'grid',
         q: '',
-        cat: 'all',
+        // На home подхватываем ?cat= / sessionStorage (фильтр с detail).
+        cat:
+          props && props.page === 'home' && typeof IVAN !== 'undefined' && IVAN.readInitialCat
+            ? IVAN.readInitialCat()
+            : 'all',
         range: '90d',
         hover: null,
         collapsed: false,
@@ -256,6 +263,31 @@
 
     openIndex(id) {
       IVAN.navigateToIndex(id);
+    }
+
+    /**
+     * Фильтр по тегу (как в прототипе setState({cat, page:'home'})).
+     * На detail — полный переход на главную с ?cat=.
+     */
+    applyFilter(cat) {
+      var next = cat || 'all';
+      if (this.page() === 'home') {
+        this.setState({ cat: next, watchOpen: false, selIdx: -1 });
+        try {
+          if (next !== 'all') sessionStorage.setItem('ivan_cat', next);
+          else sessionStorage.removeItem('ivan_cat');
+          var path = location.pathname;
+          var url = next !== 'all' ? path + '?cat=' + encodeURIComponent(next) : path;
+          if (window.history && history.replaceState) history.replaceState(null, '', url);
+        } catch (e) {}
+      } else {
+        IVAN.goHomeWithFilter(next);
+      }
+    }
+
+    setLayout(layout) {
+      this.setState({ layout: layout });
+      if (IVAN.saveLayout) IVAN.saveLayout(layout);
     }
 
     pickCmp(id, label) {
@@ -556,7 +588,7 @@
             ),
             onClick: function (e) {
               e.stopPropagation();
-              self.setState({ cat: label });
+              self.applyFilter(label);
             },
           },
           label
@@ -1037,7 +1069,7 @@
                                   "border:none;background:transparent;color:var(--accent-strong);font:600 10px 'IBM Plex Mono';letter-spacing:.1em;text-transform:uppercase;cursor:pointer;padding:0;"
                                 ),
                                 onClick: function () {
-                                  self.setState({ cat: 'saved', watchOpen: false });
+                                  self.applyFilter('saved');
                                 },
                               },
                               'only →'
@@ -1281,7 +1313,7 @@
                               key: o.t,
                               style: ps(self.tagStyle(st.cat === o.t)),
                               onClick: function () {
-                                self.setState({ cat: o.t });
+                                self.applyFilter(o.t);
                               },
                             },
                             o.label,
@@ -1325,7 +1357,7 @@
                           {
                             style: ps(self.segStyle(st.layout === 'grid')),
                             onClick: function () {
-                              self.setState({ layout: 'grid' });
+                              self.setLayout('grid');
                             },
                           },
                           'Cards'
@@ -1335,7 +1367,7 @@
                           {
                             style: ps(self.segStyle(st.layout === 'table')),
                             onClick: function () {
-                              self.setState({ layout: 'table' });
+                              self.setLayout('table');
                             },
                           },
                           'Table'
@@ -1733,7 +1765,7 @@
                     "display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:999px;border:none;background:var(--accent);color:var(--on-accent);font:600 11px 'Archivo';cursor:pointer;"
                   ),
                   onClick: function () {
-                    self.setState({ cat: 'all' });
+                    self.applyFilter('all');
                   },
                 },
                 st.cat === 'saved' ? '★ Saved' : st.cat,
@@ -2286,6 +2318,30 @@
                     )
                   : null
               )
+            ),
+            // Легенда Volume — как в handoff (столбики объёма на графике).
+            h(
+              'div',
+              {
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  fontSize: 11.5,
+                  fontFamily: 'Archivo',
+                  color: 'var(--text-dim)',
+                },
+              },
+              h('span', {
+                style: {
+                  width: 10,
+                  height: 11,
+                  background: 'var(--accent)',
+                  opacity: 0.3,
+                  borderRadius: 2,
+                },
+              }),
+              'Volume'
             ),
             h('div', { style: { flex: 1 } }),
             h(
@@ -3283,7 +3339,7 @@
                       h('button', {
                         key: 'saved',
                         style: ps("margin-top:14px;width:100%;height:38px;border:none;border-radius:999px;background:var(--accent);color:var(--on-accent);font:600 12.5px 'Archivo';cursor:pointer;"),
-                        onClick: function () { self.setState({ cat: 'saved', watchOpen: false }); },
+                        onClick: function () { self.applyFilter('saved'); },
                       }, 'Show saved only'),
                       st.watch.length > 1
                         ? h('button', {
