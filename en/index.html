@@ -5,16 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Consulting — home" />
     <title>Consulting — home</title>
+    <!-- Design-system fonts (Newsreader / Archivo / IBM Plex Mono) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&amp;family=Archivo:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="../css/styles.css" />
     <link rel="alternate" hreflang="ru" href="../index.html" />
     <link rel="alternate" hreflang="en" href="index.html" />
   </head>
   <body>
     <div class="page">
-      <!-- Header: section links and RU / EN toggle -->
+      <!-- Sticky header: brand, sections, RU/EN -->
       <header class="site-header">
-        <a class="brand" href="index.html">Ivan Zatinatsky · consulting</a>
-        <div class="header-controls">
+        <div class="site-header-inner">
+          <a class="brand" href="index.html" aria-current="page">
+            <span class="brand-name">Ivan Zatinatsky</span>
+            <span class="brand-tag">consulting</span>
+          </a>
           <nav class="site-nav" aria-label="Main navigation">
             <a href="about.html">About</a>
             <a href="articles.html">Articles</a>
@@ -28,41 +38,38 @@
       </header>
 
       <main>
-        <!-- Hero: headline and entry points -->
+        <!-- Welcome: positioning line + three section entries -->
         <section class="hero-block" aria-labelledby="hero-heading">
-          <h1 id="hero-heading">Strategy and clarity without the noise</h1>
+          <p class="kicker kicker--home">Home</p>
+          <h1 id="hero-heading">
+            Strategy and clarity <em>without the noise</em>
+          </h1>
           <p class="lead">
             I help companies and people make decisions grounded in structure,
-            data, and sound judgment. Below are three entry points: who I am,
-            what to read, and what you can engage me for.
+            data and common sense. Three ways in: who I am, what to read, what
+            you can order.
           </p>
           <div class="hero-actions">
-            <a class="btn" href="about.html">About</a>
+            <a class="btn" href="about.html">About →</a>
             <a class="btn btn-secondary" href="articles.html">Articles</a>
             <a class="btn btn-secondary" href="products.html">Products</a>
           </div>
-        </section>
-
-        <!-- Sequential typewriter lines; JSON list; sr-only filled by script -->
-        <section class="typewriter-banner" aria-label="Note under hero">
-          <script type="application/json" class="typewriter-phrases-json">
-            [
-              "I vibe-coded this site in 4 prompts lol...",
-              "then another 12 prompts tinkering with the UI and shipping it",
-              "if it feels like your analysts aren't pulling their weight, they probably aren't",
-              "Telegram: @zatinatscky"
-            ]
-          </script>
-          <p class="visually-hidden typewriter-a11y"></p>
-          <p class="typewriter-line" aria-hidden="true"><span class="typewriter-output"></span><span class="typewriter-cursor">▍</span></p>
+          <!-- Static signature with blinking caret (replaces typewriter) -->
+          <div class="hero-signature" aria-hidden="true">
+            <span class="hero-signature-caret">▍</span>
+            <span class="hero-signature-text"
+              >structure · data · common sense</span
+            >
+          </div>
         </section>
       </main>
 
       <footer class="site-footer">
-        <span>© consulting</span>
-        <a href="about.html">contacts in the About section</a>
+        <div class="site-footer-inner">
+          <span>© consulting</span>
+          <a href="about.html">contacts in “About”</a>
+        </div>
       </footer>
     </div>
-    <script src="../js/typewriter-home.js" defer></script>
   </body>
 </html>

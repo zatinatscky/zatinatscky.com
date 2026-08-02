@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Обо мне — консалтинг" />
     <title>Обо мне — консалтинг</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&amp;family=Archivo:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="alternate" hreflang="ru" href="about.html" />
     <link rel="alternate" hreflang="en" href="en/about.html" />
@@ -12,8 +18,11 @@
   <body>
     <div class="page">
       <header class="site-header">
-        <a class="brand" href="index.html">Иван Затинацкий · консалтинг</a>
-        <div class="header-controls">
+        <div class="site-header-inner">
+          <a class="brand" href="index.html">
+            <span class="brand-name">Иван Затинацкий</span>
+            <span class="brand-tag">консалтинг</span>
+          </a>
           <nav class="site-nav" aria-label="Основное меню">
             <a href="about.html" aria-current="page">Обо мне</a>
             <a href="articles.html">Статьи</a>
@@ -27,38 +36,52 @@
       </header>
 
       <main>
-        <h1 class="section-title">Обо мне</h1>
+        <!-- Биография, ценности, контакт -->
+        <section class="page-section" aria-labelledby="about-heading">
+          <p class="kicker">Обо мне</p>
+          <h1 id="about-heading" class="section-title">Обо мне</h1>
 
-        <!-- Две колонки: профиль и контакты / формат работы -->
-        <div class="split">
-          <div class="split-panel">
+          <div class="about-row">
             <h2>Профиль</h2>
-            <p>
-              Замените этот абзац своей биографией: опыт, индустрии, подход к
-              задачам клиента. Коротко и по делу — визитка читается за минуту.
-            </p>
-            <p>
-              Второй абзац — акцент на ценности: например, прозрачность,
-              измеримость результата, совместная работа с командой заказчика.
-            </p>
+            <div class="about-body">
+              <p>
+                Замените этот абзац своей биографией: опыт, индустрии, подход к
+                задачам клиента. Коротко и по делу — визитка читается за минуту.
+              </p>
+              <p>
+                Второй абзац — акцент на ценности: например, прозрачность,
+                измеримость результата, совместная работа с командой заказчика.
+              </p>
+            </div>
           </div>
-          <div class="split-panel">
+
+          <div class="about-row">
             <h2>Контакт и формат</h2>
-            <p>
-              Email: <strong>you@example.com</strong><br />
-              Город / часовой пояс — при необходимости.
-            </p>
-            <p>
-              Форматы: разовые сессии, проекты на несколько недель, наставничество.
-              Уточните, что реально предлагаете — это снимает лишние вопросы.
-            </p>
+            <div class="about-body about-body--contact">
+              <div class="contact-card">
+                <span class="contact-card-label">Email</span>
+                <a class="contact-card-email" href="mailto:you@example.com"
+                  >you@example.com</a
+                >
+                <span class="contact-card-note"
+                  >Город / часовой пояс — при необходимости.</span
+                >
+              </div>
+              <p>
+                Форматы: разовые сессии, проекты на несколько недель,
+                наставничество. Уточните, что реально предлагаете — это снимает
+                лишние вопросы.
+              </p>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
 
       <footer class="site-footer">
-        <span>© консалтинг</span>
-        <a href="index.html">На главную</a>
+        <div class="site-footer-inner">
+          <span>© консалтинг</span>
+          <a href="about.html">контакты в разделе «Обо мне»</a>
+        </div>
       </footer>
     </div>
   </body>

@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Статьи — консалтинг" />
     <title>Статьи — консалтинг</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&amp;family=Archivo:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="alternate" hreflang="ru" href="articles.html" />
     <link rel="alternate" hreflang="en" href="en/articles.html" />
@@ -12,8 +18,11 @@
   <body>
     <div class="page">
       <header class="site-header">
-        <a class="brand" href="index.html">Иван Затинацкий · консалтинг</a>
-        <div class="header-controls">
+        <div class="site-header-inner">
+          <a class="brand" href="index.html">
+            <span class="brand-name">Иван Затинацкий</span>
+            <span class="brand-tag">консалтинг</span>
+          </a>
           <nav class="site-nav" aria-label="Основное меню">
             <a href="about.html">Обо мне</a>
             <a href="articles.html" aria-current="page">Статьи</a>
@@ -27,44 +36,54 @@
       </header>
 
       <main>
-        <h1 class="section-title">Статьи</h1>
-        <p class="lead">
-          Заготовки карточек — замените заголовки и анонсы на свои материалы или
-          ссылки на внешние публикации.
-        </p>
+        <!-- Список публикаций в hairline-сетке -->
+        <section class="page-section" aria-labelledby="articles-heading">
+          <p class="kicker">Статьи</p>
+          <h1 id="articles-heading" class="section-title section-title--flush">
+            Статьи
+          </h1>
+          <p class="lead">
+            Заготовки карточек — замените заголовки и анонсы на свои материалы
+            или ссылки на внешние публикации.
+          </p>
 
-        <!-- Сетка статей: каждая ячейка — отдельная статья -->
-        <div class="grid-cards">
-          <article>
-            <p class="meta">2026 · заметка</p>
-            <h3>Как не запутаться в метриках</h3>
-            <p>
-              Краткий анонс: о чём текст, для кого, какую пользу читатель
-              получит за пять минут чтения.
-            </p>
-          </article>
-          <article>
-            <p class="meta">2026 · разбор</p>
-            <h3>Один инструмент вместо десяти таблиц</h3>
-            <p>
-              Второй пример карточки — можно оформить ссылкой на PDF, блог или
-              Medium.
-            </p>
-          </article>
-          <article>
-            <p class="meta">Черновик</p>
-            <h3>Заголовок будущей публикации</h3>
-            <p>
-              Зарезервированное место под следующую статью, чтобы сетка не
-              ломалась при добавлении контента.
-            </p>
-          </article>
-        </div>
+          <div class="grid-cards">
+            <a href="#">
+              <span class="meta">2026 · заметка</span>
+              <h3>Как не запутаться в метриках</h3>
+              <p>
+                Краткий анонс: о чём текст, для кого, какую пользу читатель
+                получит за пять минут чтения.
+              </p>
+              <span class="card-cta">Читать →</span>
+            </a>
+            <a href="#">
+              <span class="meta">2026 · разбор</span>
+              <h3>Один инструмент вместо десяти таблиц</h3>
+              <p>
+                Второй пример карточки — можно оформить ссылкой на PDF, блог или
+                Medium.
+              </p>
+              <span class="card-cta">Читать →</span>
+            </a>
+            <!-- Заглушка держит ритм сетки до появления реального контента -->
+            <div class="card-placeholder">
+              <span class="meta">Черновик</span>
+              <h3>Заголовок будущей публикации</h3>
+              <p>
+                Зарезервированное место под следующую статью, чтобы сетка не
+                ломалась при добавлении контента.
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer class="site-footer">
-        <span>© консалтинг</span>
-        <a href="index.html">На главную</a>
+        <div class="site-footer-inner">
+          <span>© консалтинг</span>
+          <a href="about.html">контакты в разделе «Обо мне»</a>
+        </div>
       </footer>
     </div>
   </body>

@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Articles — consulting" />
     <title>Articles — consulting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&amp;family=Archivo:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="../css/styles.css" />
     <link rel="alternate" hreflang="ru" href="../articles.html" />
     <link rel="alternate" hreflang="en" href="articles.html" />
@@ -12,8 +18,11 @@
   <body>
     <div class="page">
       <header class="site-header">
-        <a class="brand" href="index.html">Ivan Zatinatsky · consulting</a>
-        <div class="header-controls">
+        <div class="site-header-inner">
+          <a class="brand" href="index.html">
+            <span class="brand-name">Ivan Zatinatsky</span>
+            <span class="brand-tag">consulting</span>
+          </a>
           <nav class="site-nav" aria-label="Main navigation">
             <a href="about.html">About</a>
             <a href="articles.html" aria-current="page">Articles</a>
@@ -27,43 +36,53 @@
       </header>
 
       <main>
-        <h1 class="section-title">Articles</h1>
-        <p class="lead">
-          Placeholder cards — replace titles and summaries with your pieces or
-          links to external publications.
-        </p>
+        <!-- Publication cards in a hairline grid -->
+        <section class="page-section" aria-labelledby="articles-heading">
+          <p class="kicker">Articles</p>
+          <h1 id="articles-heading" class="section-title section-title--flush">
+            Articles
+          </h1>
+          <p class="lead">
+            Card templates — replace the titles and blurbs with your own pieces
+            or links to external publications.
+          </p>
 
-        <!-- Article grid: one cell per piece -->
-        <div class="grid-cards">
-          <article>
-            <p class="meta">2026 · note</p>
-            <h3>How not to drown in metrics</h3>
-            <p>
-              Short blurb: what the piece covers, who it is for, and what the
-              reader gains in about five minutes.
-            </p>
-          </article>
-          <article>
-            <p class="meta">2026 · deep dive</p>
-            <h3>One tool instead of ten spreadsheets</h3>
-            <p>
-              Second example — can link to a PDF, blog post, or Medium article.
-            </p>
-          </article>
-          <article>
-            <p class="meta">Draft</p>
-            <h3>Title for an upcoming article</h3>
-            <p>
-              Reserved slot for the next piece so the grid stays balanced when
-              you add content.
-            </p>
-          </article>
-        </div>
+          <div class="grid-cards">
+            <a href="#">
+              <span class="meta">2026 · note</span>
+              <h3>How not to drown in metrics</h3>
+              <p>
+                A short blurb: what the piece covers, who it is for, what the
+                reader gains in five minutes.
+              </p>
+              <span class="card-cta">Read →</span>
+            </a>
+            <a href="#">
+              <span class="meta">2026 · analysis</span>
+              <h3>One tool instead of ten spreadsheets</h3>
+              <p>
+                A second card example — can link to a PDF, a blog or Medium.
+              </p>
+              <span class="card-cta">Read →</span>
+            </a>
+            <!-- Placeholder keeps the grid rhythm until real content arrives -->
+            <div class="card-placeholder">
+              <span class="meta">Draft</span>
+              <h3>Title of the next piece</h3>
+              <p>
+                Reserved slot for the next article so the grid keeps its shape
+                as content lands.
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer class="site-footer">
-        <span>© consulting</span>
-        <a href="index.html">Home</a>
+        <div class="site-footer-inner">
+          <span>© consulting</span>
+          <a href="about.html">contacts in “About”</a>
+        </div>
       </footer>
     </div>
   </body>

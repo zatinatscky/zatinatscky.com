@@ -5,16 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Консалтинг — главная" />
     <title>Консалтинг — главная</title>
+    <!-- Шрифты дизайн-системы (Newsreader / Archivo / IBM Plex Mono) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&amp;family=Archivo:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="alternate" hreflang="ru" href="index.html" />
     <link rel="alternate" hreflang="en" href="en/index.html" />
   </head>
   <body>
     <div class="page">
-      <!-- Шапка: навигация по разделам и переключатель RU / EN -->
+      <!-- Sticky-шапка: бренд, разделы, RU/EN -->
       <header class="site-header">
-        <a class="brand" href="index.html">Иван Затинацкий · консалтинг</a>
-        <div class="header-controls">
+        <div class="site-header-inner">
+          <a class="brand" href="index.html" aria-current="page">
+            <span class="brand-name">Иван Затинацкий</span>
+            <span class="brand-tag">консалтинг</span>
+          </a>
           <nav class="site-nav" aria-label="Основное меню">
             <a href="about.html">Обо мне</a>
             <a href="articles.html">Статьи</a>
@@ -28,41 +38,38 @@
       </header>
 
       <main>
-        <!-- Герой-блок: короткий тезис и переходы в разделы -->
+        <!-- Welcome: позиционирование + три входа в разделы -->
         <section class="hero-block" aria-labelledby="hero-heading">
-          <h1 id="hero-heading">Стратегия и ясность без лишнего шума</h1>
+          <p class="kicker kicker--home">Главная</p>
+          <h1 id="hero-heading">
+            Стратегия и ясность <em>без лишнего шума</em>
+          </h1>
           <p class="lead">
             Помогаю компаниям и людям принимать решения на основе структуры,
             данных и здравого смысла. Ниже — три входа: кто я, что читать и что
             можно заказать.
           </p>
           <div class="hero-actions">
-            <a class="btn" href="about.html">Обо мне</a>
+            <a class="btn" href="about.html">Обо мне →</a>
             <a class="btn btn-secondary" href="articles.html">Статьи</a>
             <a class="btn btn-secondary" href="products.html">Продукты</a>
           </div>
-        </section>
-
-        <!-- Последовательный набор фраз: список в JSON; a11y — полный текст из скрипта -->
-        <section class="typewriter-banner" aria-label="Подпись под героем">
-          <script type="application/json" class="typewriter-phrases-json">
-            [
-              "я навайбкодил этот сайт за 4 промпта лол...",
-              "потом еще 12 промптов игрался с интерфейсом и опубликовал",
-              "если у вас ощущение, что ваши аналитики недорабатывают, значит они недорабатывают",
-              "связаться в тг: @zatinatscky"
-            ]
-          </script>
-          <p class="visually-hidden typewriter-a11y"></p>
-          <p class="typewriter-line" aria-hidden="true"><span class="typewriter-output"></span><span class="typewriter-cursor">▍</span></p>
+          <!-- Статичная подпись с мигающей кареткой (вместо typewriter) -->
+          <div class="hero-signature" aria-hidden="true">
+            <span class="hero-signature-caret">▍</span>
+            <span class="hero-signature-text"
+              >структура · данные · здравый смысл</span
+            >
+          </div>
         </section>
       </main>
 
       <footer class="site-footer">
-        <span>© консалтинг</span>
-        <a href="about.html">контакты в разделе «Обо мне»</a>
+        <div class="site-footer-inner">
+          <span>© консалтинг</span>
+          <a href="about.html">контакты в разделе «Обо мне»</a>
+        </div>
       </footer>
     </div>
-    <script src="js/typewriter-home.js" defer></script>
   </body>
 </html>
