@@ -2883,6 +2883,104 @@
                   : '')
             ),
           },
+          // Eyebrow: INDEX TERMINAL с линиями по бокам (как в Claude Design).
+          h(
+            'div',
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                width: '100%',
+                maxWidth: 560,
+                animation: 'ivwFade 1s .3s both',
+              },
+            },
+            h('div', {
+              style: ps(
+                'flex:1;height:1px;background:var(--hairline);transform-origin:right;animation:ivwLine 1.1s .35s cubic-bezier(.16,1,.3,1) both;'
+              ),
+            }),
+            h(
+              'span',
+              {
+                style: ps(
+                  "font:600 9.5px 'IBM Plex Mono';letter-spacing:.24em;text-transform:uppercase;color:var(--text-faint);white-space:nowrap;"
+                ),
+              },
+              'Index Terminal'
+            ),
+            h('div', {
+              style: ps(
+                'flex:1;height:1px;background:var(--hairline);transform-origin:left;animation:ivwLine 1.1s .35s cubic-bezier(.16,1,.3,1) both;'
+              ),
+            })
+          ),
+          // Главный заголовок welcome: «Ready for the bigger picture?»
+          h(
+            'h1',
+            {
+              style: {
+                margin: '34px 0 0',
+                fontFamily: 'Newsreader',
+                fontWeight: 500,
+                fontSize: 'clamp(46px,7vw,96px)',
+                lineHeight: 1.02,
+                letterSpacing: '-.025em',
+                color: 'var(--text)',
+              },
+            },
+            (function () {
+              // Каждое слово в overflow-обёртке + ivwRise (появление снизу).
+              var words = [
+                { t: 'Ready', delay: '.45s', em: false },
+                { t: 'for', delay: '.56s', em: false },
+                { t: 'the', delay: '.64s', em: false },
+                { t: 'bigger', delay: '.72s', em: true },
+                { t: 'picture', delay: '.8s', em: true, q: true },
+              ];
+              return words.map(function (w) {
+                var inner = w.em
+                  ? h(
+                      'em',
+                      {
+                        style: {
+                          fontStyle: 'italic',
+                          background:
+                            'linear-gradient(var(--tone-soft),var(--tone-soft)) 0 66% / 100% .34em no-repeat',
+                          padding: '0 .04em',
+                        },
+                      },
+                      w.t + (w.q ? '?' : '')
+                    )
+                  : w.t;
+                return h(
+                  'span',
+                  {
+                    key: w.t,
+                    style: {
+                      display: 'inline-block',
+                      overflow: 'hidden',
+                      verticalAlign: 'bottom',
+                      padding: '0 .06em',
+                      margin: '0 -.06em',
+                    },
+                  },
+                  h(
+                    'span',
+                    {
+                      style: {
+                        display: 'inline-block',
+                        animation:
+                          'ivwRise 1s ' + w.delay + ' cubic-bezier(.16,1,.3,1) both',
+                      },
+                    },
+                    inner
+                  )
+                );
+              });
+            })()
+          ),
           h(
             'button',
             {
