@@ -4,3 +4,7 @@ __pycache__/
 data/*.db
 # Секреты VPS-деплоя — только локально/на сервере, не в git.
 .env
+
+# Zip handoff не коммитим — эталон лежит распакованным в ivan/design-handoff/.
+ivan/Data-продукт*.zip
+ivan/*.zip

@@ -13,3 +13,6 @@ node_modules
 deploy/
 DEPLOY_*.md
 README*.md
+# Claude Design handoff — только reference, не в Docker-образ.
+ivan/design-handoff/
+ivan/*.zip

@@ -154,8 +154,8 @@
           tone: '#DDBA9B',
           toneSoft: 'rgba(221,186,155,.55)',
           shadow: 'rgba(1,53,71,.16)',
-          // Ссылки / strong: чуть темнее песка (не navy), как «darker accent» в handoff.
-          accentStrong: '#B8956F',
+          // Как в прототипе themeVars (light): strong = navy для ссылок.
+          accentStrong: '#013547',
         };
     v.accent = accent;
     v.accentSoft = hexA(accent, 0.14);
