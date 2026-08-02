@@ -106,8 +106,9 @@
   /** CSS-переменные темы (light/dark + accent) */
   function themeVars(theme, accentOverride) {
     var dark = theme === 'dark';
-    var accent =
-      accentOverride || (dark ? '#DDBA9B' : '#013547');
+    // Handoff Claude Design: default accent = #DDBA9B (светло-рыжий) в обеих темах.
+    // В прототипе это шло из data-props; без props светлая тема ошибочно брала #013547.
+    var accent = accentOverride || '#DDBA9B';
     var v = dark
       ? {
           bg: '#022733',
@@ -153,7 +154,8 @@
           tone: '#DDBA9B',
           toneSoft: 'rgba(221,186,155,.55)',
           shadow: 'rgba(1,53,71,.16)',
-          accentStrong: '#013547',
+          // Ссылки / strong: чуть темнее песка (не navy), как «darker accent» в handoff.
+          accentStrong: '#B8956F',
         };
     v.accent = accent;
     v.accentSoft = hexA(accent, 0.14);
@@ -174,6 +176,7 @@
       0.299 * ((n >> 16) & 255) +
       0.587 * ((n >> 8) & 255) +
       0.114 * (n & 255);
+    // На рыжем фоне текст тёмно-синий (#013547), как --on-accent в handoff.
     v.onAccent = lum > 150 ? '#013547' : '#EBEBEB';
     return v;
   }

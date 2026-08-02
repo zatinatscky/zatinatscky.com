@@ -49,6 +49,8 @@
       this.data = IVAN.genData();
       this.state = {
         theme: (props && props.theme) || 'light',
+        // Handoff default accent (#DDBA9B) — линии графиков, CTA, chips.
+        accent: (props && props.accent) || '#DDBA9B',
         layout: (props && props.layout) || 'grid',
         q: '',
         cat: 'all',
@@ -2931,7 +2933,9 @@
               },
             },
             (function () {
-              // Каждое слово в overflow-обёртке + ivwRise (появление снизу).
+              // Каждое слово в overflow-обёртке + ivwRise.
+              // Между словами нужен явный пробел: React-массив детей НЕ вставляет
+              // whitespace (в HTML-прототипе пробелы были между тегами).
               var words = [
                 { t: 'Ready', delay: '.45s', em: false },
                 { t: 'for', delay: '.56s', em: false },
@@ -2939,7 +2943,8 @@
                 { t: 'bigger', delay: '.72s', em: true },
                 { t: 'picture', delay: '.8s', em: true, q: true },
               ];
-              return words.map(function (w) {
+              var nodes = [];
+              words.forEach(function (w, i) {
                 var inner = w.em
                   ? h(
                       'em',
@@ -2954,31 +2959,35 @@
                       w.t + (w.q ? '?' : '')
                     )
                   : w.t;
-                return h(
-                  'span',
-                  {
-                    key: w.t,
-                    style: {
-                      display: 'inline-block',
-                      overflow: 'hidden',
-                      verticalAlign: 'bottom',
-                      padding: '0 .06em',
-                      margin: '0 -.06em',
-                    },
-                  },
+                nodes.push(
                   h(
                     'span',
                     {
+                      key: w.t,
                       style: {
                         display: 'inline-block',
-                        animation:
-                          'ivwRise 1s ' + w.delay + ' cubic-bezier(.16,1,.3,1) both',
+                        overflow: 'hidden',
+                        verticalAlign: 'bottom',
+                        padding: '0 .06em',
+                        margin: '0 -.06em',
                       },
                     },
-                    inner
+                    h(
+                      'span',
+                      {
+                        style: {
+                          display: 'inline-block',
+                          animation:
+                            'ivwRise 1s ' + w.delay + ' cubic-bezier(.16,1,.3,1) both',
+                        },
+                      },
+                      inner
+                    )
                   )
                 );
+                if (i < words.length - 1) nodes.push(' ');
               });
+              return nodes;
             })()
           ),
           h(
@@ -3346,7 +3355,7 @@
 
       return h(
         'div',
-        { style: rootStyleObj(st.theme) },
+        { style: rootStyleObj(st.theme, st.accent) },
         this.renderSidebar(st, I, items),
         h('div', { style: contentStyle }, mainContent),
         st.welcomeOpen && page === 'home' ? this.renderWelcome(st, I) : null,
