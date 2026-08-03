@@ -41,6 +41,29 @@
     return ps(IVAN.rootStyleCss(theme, accent));
   }
 
+  /**
+   * Wordmark из /ivan/logo.png.
+   * Исходник тёмно-бирюзовый на прозрачном фоне — в dark-теме инвертируем в светлый.
+   */
+  function brandLogo(theme, height, extraStyle) {
+    var style = Object.assign(
+      {
+        height: height || 28,
+        width: 'auto',
+        display: 'block',
+        // В тёмной теме буквы иначе почти сливаются с фоном.
+        filter: theme === 'dark' ? 'brightness(0) invert(1)' : 'none',
+      },
+      extraStyle || {}
+    );
+    return h('img', {
+      src: '/ivan/logo.png',
+      alt: 'IVAN',
+      draggable: false,
+      style: style,
+    });
+  }
+
   /** Класс приложения — состояние UI как в прототипе terminal.dc.html */
   class IvanApp extends React.Component {
     constructor(props) {
@@ -1269,25 +1292,14 @@
                     onClick: function () {
                       IVAN.goHome();
                     },
+                    title: 'IVAN — home',
                   },
-                  h(
-                    'div',
-                    {
-                      style: {
-                        fontFamily: 'Newsreader',
-                        fontStyle: 'italic',
-                        fontWeight: 500,
-                        fontSize: 30,
-                        color: 'var(--text)',
-                      },
-                    },
-                    'IVAN'
-                  ),
+                  brandLogo(st.theme, 28),
                   h(
                     'div',
                     {
                       style: ps(
-                        "font:500 9px/1.7 'IBM Plex Mono';color:var(--text-faint);letter-spacing:.14em;text-transform:uppercase;margin-top:4px;"
+                        "font:500 9px/1.7 'IBM Plex Mono';color:var(--text-faint);letter-spacing:.14em;text-transform:uppercase;margin-top:6px;"
                       ),
                     },
                     'Index · Volatility ·',
@@ -1859,17 +1871,13 @@
                   title: 'IVAN — home',
                   style: {
                     cursor: 'pointer',
-                    fontFamily: 'Newsreader',
-                    fontStyle: 'italic',
-                    fontWeight: 500,
-                    fontSize: 19,
-                    color: 'var(--text)',
-                    writingMode: 'sideways-lr',
-                    letterSpacing: '.08em',
                     padding: '6px 0',
+                    // В узкой колонке wordmark ставим вертикально
+                    transform: 'rotate(-90deg)',
+                    transformOrigin: 'center',
                   },
                 },
-                'IVAN'
+                brandLogo(st.theme, 16)
               ),
               h('div', { style: { width: 20, height: 1, background: 'var(--hairline)' } }),
               h(
@@ -3354,15 +3362,7 @@
                 animation: 'ivpulse 2.4s infinite',
               },
             }),
-            h(
-              'span',
-              {
-                style: ps(
-                  "font:600 10px 'IBM Plex Mono';letter-spacing:.22em;text-transform:uppercase;color:var(--text);"
-                ),
-              },
-              'IVAN'
-            )
+            brandLogo(st.theme, 16)
           ),
           h(
             'span',
@@ -3900,18 +3900,7 @@
           'align-items:center;justify-content:center;flex-direction:column;gap:14px;'
         ),
       },
-      h(
-        'div',
-        {
-          style: {
-            fontFamily: 'Newsreader',
-            fontSize: 28,
-            fontWeight: 500,
-            letterSpacing: '-0.01em',
-          },
-        },
-        'IVAN'
-      ),
+      brandLogo('light', 32),
       h(
         'div',
         {

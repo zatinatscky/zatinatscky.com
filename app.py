@@ -420,7 +420,7 @@ FNG_INDEX_STRING = (
     "{%metas%}\n"
     "<title>{%title%}</title>\n"
     f'<link rel="canonical" href="{FNG_PAGE_URL}" />\n'
-    '<link rel="icon" type="image/png" href="/ivan/favicon.png" />\n'
+    '<link rel="icon" type="image/png" href="/ivan/favicon.png?v=2" />\n'
     "{%favicon%}\n"
     "{%css%}\n"
     f'<script type="application/ld+json">{FNG_JSONLD}</script>\n'
