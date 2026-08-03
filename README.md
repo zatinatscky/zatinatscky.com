@@ -27,7 +27,8 @@
 
 ### Логические блоки
 
-- **Точка входа `app.py`** — собирает Flask-приложение, монтирует Dash, реализует **host-aware роутинг**: по `Host` решает, что отдать (визитка vs IVAN), а также `robots.txt`/`sitemap.xml` под каждый домен. API: `/api/fng/latest` для живого hero-блока, `/api/indexes` для терминала.
+- **Точка входа `app.py`** — собирает Flask-приложение, монтирует Dash, реализует **host-aware роутинг**: по `Host` решает, что отдать (визитка vs IVAN), а также `robots.txt`/`sitemap.xml` под каждый домен. API: `/api/fng/latest` для живого hero-блока, `/api/indexes` для терминала, `/api/auth/*` и `/api/me*` для Google/Telegram login и sync watchlist.
+- **Авторизация `auth/`** — Google OAuth + Telegram Login Widget, cookie-сессия, watchlist в Postgres после входа (до входа — localStorage).
 - **Слой данных `fng_data.py`** — подключение к Postgres, полная/инкрементальная загрузка истории Fear & Greed и цен BTC, нормализация `DATABASE_URL`.
 - **Слой индексов `indices/`** — реальные данные терминала (см. раздел «Данные индексов» ниже).
 - **Дашборд `fng_dash_layout.py`** — layout и колбэки Dash: «скелетон» при загрузке, графики, фильтр по датам, логотип-ссылка на главную.

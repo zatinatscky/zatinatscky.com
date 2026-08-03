@@ -17,6 +17,7 @@ from dash import Dash
 from flask import Flask, Response, abort, redirect, request, send_from_directory
 from sqlalchemy import text
 
+from auth.routes import register_auth_routes
 from fng_data import full_refresh, get_engine
 from fng_dash_layout import build_dashboard_shell_layout, register_dash_callbacks
 from indices.registry import INDEX_IDS
@@ -77,6 +78,9 @@ def create_server() -> Flask:
     _ensure_stdio_logging()
 
     engine = get_engine()
+
+    # Google / Telegram login + sync watchlist (см. auth/).
+    register_auth_routes(server, engine)
 
     # Заполняем БД на старте, чтобы дашборд сразу имел актуальные данные.
     # Можно отключить через env AUTO_SYNC_ON_START=false.

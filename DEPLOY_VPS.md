@@ -48,7 +48,10 @@ nano .env
 
 - `POSTGRES_PASSWORD` — длинный пароль: `openssl rand -hex 24`
 - `CRON_TOKEN` — длинный токен: `openssl rand -hex 32`
+- `SECRET_KEY` — длинный секрет для cookie-сессий: `openssl rand -hex 32`
+- `PUBLIC_BASE_URL=https://ivan.zatinatscky.com`
 - `DASH_ROOT_HOST=ivan.zatinatscky.com` (уже стоит)
+- (опционально) Google / Telegram — см. блок Auth в `.env.example`. Без них Sign-in в UI скрыт.
 
 Сохранить (Ctrl+O, Enter, Ctrl+X). Файл `.env` в git не попадает.
 
@@ -237,6 +240,26 @@ Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `
 
 ---
 
+## Sign-in (Google / Telegram)
+
+Пока переменные пустые, кнопки входа в UI скрыты — терминал работает как раньше (watchlist в localStorage).
+
+**Google**
+
+1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth 2.0 Client ID (Web).
+2. Authorized redirect URI: `https://ivan.zatinatscky.com/api/auth/google/callback`
+3. В `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, затем `docker compose up -d` (пересоздаст `web` с новыми env).
+
+**Telegram**
+
+1. Создать бота у `@BotFather`, взять token и username.
+2. `/setdomain` → `ivan.zatinatscky.com`
+3. В `.env`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` (без `@`), перезапуск `web`.
+
+Обязательно также задать `SECRET_KEY` и `PUBLIC_BASE_URL` (см. `.env.example`).
+
+---
+
 ## Возможные проблемы
 
 | Симптом | Что проверить |
@@ -256,7 +279,7 @@ Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `
 ## Чеклист
 
 - [ ] Репозиторий склонирован в `/home/ivan/zatinatscky`
-- [ ] `.env` заполнен (пароль БД, CRON_TOKEN)
+- [ ] `.env` заполнен (пароль БД, CRON_TOKEN, SECRET_KEY; опционально Google/Telegram)
 - [ ] `docker compose up -d --build` — контейнеры `Up`/`healthy`
 - [ ] DNS `ivan` → `13.140.157.222` (A), старый CNAME удалён
 - [ ] `https://ivan.zatinatscky.com/` и `/fng/` открываются по HTTPS

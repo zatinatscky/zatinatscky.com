@@ -87,6 +87,12 @@
         cmpSel: 0,
         yoursOpen: true,
         browseOpen: true,
+        // Auth: профиль, доступные провайдеры, модалка Sign-in
+        user: null,
+        authProviders: { google: false, telegram: false, telegramBotUsername: null },
+        authOpen: false,
+        authBusy: false,
+        authError: null,
       };
       this._cards = {};
       this._ids = [];
@@ -94,6 +100,8 @@
       this._search = null;
       this._tip = null;
       this._tickPaused = false;
+      this._tgBox = null; // DOM-контейнер для Telegram Login Widget
+      this._tgMountedFor = null; // bot username, для которого виджет уже вставлен
     }
 
     /** Текущая страница и id индекса — только из props (MPA) */
@@ -123,6 +131,7 @@
       if (alerts && typeof alerts === 'object') this.setState({ alerts: alerts });
 
       this.initDetailForm();
+      this.bootAuth();
 
       this._onKey = function (e) {
         var t = e.target;
@@ -133,6 +142,10 @@
         if (e.key === 'Escape') {
           if (typing) {
             t.blur();
+            return;
+          }
+          if (st.authOpen) {
+            self.setState({ authOpen: false, authError: null });
             return;
           }
           if (st.cmpOpen) {
@@ -222,10 +235,12 @@
       }, 2800);
     }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps, prevState) {
       if (prevProps.indexId !== this.props.indexId || prevProps.page !== this.props.page) {
         this.initDetailForm();
       }
+      // Telegram Widget — обычный <script> с data-атрибутами; монтируем в DOM после открытия модалки.
+      this.mountTelegramIfNeeded(prevState);
     }
 
     componentWillUnmount() {
@@ -330,6 +345,355 @@
       else w.push(id);
       this.setState({ watch: w });
       IVAN.saveWatchlist(w);
+      // Залогинен — зеркалим на сервер (localStorage остаётся кэшем на случай офлайна).
+      this.syncWatchlistToServer(w);
+    }
+
+    /** Загрузка сессии + провайдеров; после Google-редиректа — merge списка. */
+    bootAuth() {
+      var self = this;
+      if (!IVAN.fetchMe || !IVAN.fetchAuthProviders) return;
+
+      var q = IVAN.readAuthQuery ? IVAN.readAuthQuery() : {};
+      Promise.all([IVAN.fetchMe(), IVAN.fetchAuthProviders()]).then(function (pair) {
+        var user = pair[0];
+        var providers = pair[1] || {};
+        self.setState({ user: user, authProviders: providers });
+
+        if (user) {
+          // Только что вернулись с Google (?auth=ok) или уже были в сессии —
+          // всегда merge локального списка с серверным.
+          self.applyAuthedWatchlist(user);
+        } else if (q.auth === 'error') {
+          self.setState({
+            authOpen: true,
+            authError: 'Sign-in failed' + (q.provider ? ' (' + q.provider + ')' : '') + '. Try again.',
+          });
+        }
+
+        if (IVAN.clearAuthQueryParams) IVAN.clearAuthQueryParams();
+      });
+    }
+
+    /** Сливает localStorage ∪ server и кладёт результат в state + LS. */
+    applyAuthedWatchlist(user) {
+      var self = this;
+      var local = IVAN.loadWatchlist();
+      if (!IVAN.mergeWatchlist) return;
+      IVAN.mergeWatchlist(local)
+        .then(function (ids) {
+          IVAN.saveWatchlist(ids);
+          self.setState({ user: user || self.state.user, watch: ids });
+        })
+        .catch(function () {
+          /* сеть/401 — оставляем локальный список */
+        });
+    }
+
+    syncWatchlistToServer(ids) {
+      if (!this.state.user || !IVAN.putWatchlist) return;
+      IVAN.putWatchlist(ids).catch(function () {});
+    }
+
+    openAuth() {
+      this.setState({ authOpen: true, authError: null });
+    }
+
+    closeAuth() {
+      this.setState({ authOpen: false, authError: null });
+      this._tgMountedFor = null;
+    }
+
+    signOut() {
+      var self = this;
+      if (!IVAN.logout) return;
+      IVAN.logout()
+        .catch(function () {})
+        .then(function () {
+          self.setState({ user: null, authOpen: false });
+        });
+    }
+
+    onTelegramAuth(payload) {
+      var self = this;
+      if (!IVAN.loginWithTelegram) return;
+      this.setState({ authBusy: true, authError: null });
+      IVAN.loginWithTelegram(payload)
+        .then(function (user) {
+          self.setState({ user: user, authBusy: false, authOpen: false });
+          self.applyAuthedWatchlist(user);
+        })
+        .catch(function (err) {
+          self.setState({
+            authBusy: false,
+            authError: (err && err.message) || 'Telegram sign-in failed',
+          });
+        });
+    }
+
+    mountTelegramIfNeeded(prevState) {
+      var st = this.state;
+      var bot = st.authProviders && st.authProviders.telegramBotUsername;
+      var should =
+        st.authOpen && st.authProviders && st.authProviders.telegram && bot && this._tgBox;
+      if (!should) {
+        if (prevState && prevState.authOpen && !st.authOpen) {
+          this._tgMountedFor = null;
+          if (this._tgBox) this._tgBox.innerHTML = '';
+        }
+        return;
+      }
+      if (this._tgMountedFor === bot) return;
+      this._tgMountedFor = bot;
+      var self = this;
+      IVAN.mountTelegramWidget(this._tgBox, bot, function (user) {
+        self.onTelegramAuth(user);
+      });
+    }
+
+    /** CTA / кнопки Sign-in — общая разметка для Watchlist и сайдбара. */
+    renderSignInCta(opts) {
+      var self = this;
+      var o = opts || {};
+      var st = this.state;
+      if (st.user) {
+        var name = st.user.displayName || st.user.email || 'Signed in';
+        return h(
+          'div',
+          {
+            key: o.key || 'signed',
+            style: {
+              marginTop: o.marginTop != null ? o.marginTop : 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              justifyContent: 'space-between',
+            },
+          },
+          h(
+            'div',
+            { style: { minWidth: 0, flex: 1 } },
+            h(
+              'div',
+              {
+                style: {
+                  fontSize: 12,
+                  fontFamily: 'Archivo',
+                  color: 'var(--text)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                },
+              },
+              name
+            ),
+            h(
+              'div',
+              {
+                style: ps(
+                  "font:500 10px 'IBM Plex Mono';letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-top:2px;"
+                ),
+              },
+              'list synced'
+            )
+          ),
+          h(
+            'button',
+            {
+              style: ps(
+                "border:none;background:transparent;color:var(--text-faint);font:600 10px 'IBM Plex Mono';letter-spacing:.1em;text-transform:uppercase;cursor:pointer;padding:0;flex-shrink:0;"
+              ),
+              onClick: function () {
+                self.signOut();
+              },
+            },
+            'Sign out'
+          )
+        );
+      }
+      // Акцентная кнопка — основной CTA на сохранение списка в аккаунте
+      return h(
+        'button',
+        {
+          key: o.key || 'signin',
+          style: ps(
+            'margin-top:' +
+              (o.marginTop != null ? o.marginTop : 12) +
+              "px;width:100%;height:38px;border:none;border-radius:999px;background:var(--accent);color:var(--on-accent);font:600 12.5px 'Archivo';cursor:pointer;"
+          ),
+          onClick: function () {
+            self.openAuth();
+          },
+        },
+        o.label || 'Sign-in to save your list'
+      );
+    }
+
+    renderAuthModal(st) {
+      var self = this;
+      if (!st.authOpen) return null;
+      var p = st.authProviders || {};
+      var any = p.google || p.telegram;
+
+      return [
+        h('div', {
+          key: 'auth-bg',
+          onClick: function () {
+            self.closeAuth();
+          },
+          style: {
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(1,20,28,.45)',
+            zIndex: 120,
+          },
+        }),
+        h(
+          'div',
+          {
+            key: 'auth',
+            style: {
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%,-50%)',
+              zIndex: 125,
+              width: 340,
+              background: 'var(--bg2)',
+              borderRadius: '24px 24px 24px 6px',
+              padding: 26,
+              boxShadow: '0 24px 60px rgba(1,20,28,.4)',
+            },
+          },
+          h(
+            'div',
+            {
+              style: {
+                fontFamily: 'Newsreader',
+                fontWeight: 500,
+                fontSize: 21,
+                color: 'var(--text)',
+              },
+            },
+            'Sign in'
+          ),
+          h(
+            'div',
+            {
+              style: {
+                fontSize: 12.5,
+                fontFamily: 'Archivo',
+                color: 'var(--text-faint)',
+                lineHeight: 1.55,
+                marginTop: 8,
+              },
+            },
+            'Save your watchlist across devices. Local stars stay until you sign in — then we merge them.'
+          ),
+          st.authError
+            ? h(
+                'div',
+                {
+                  style: {
+                    marginTop: 12,
+                    fontSize: 12,
+                    fontFamily: 'Archivo',
+                    color: 'var(--down)',
+                    lineHeight: 1.45,
+                  },
+                },
+                st.authError
+              )
+            : null,
+          !any
+            ? h(
+                'div',
+                {
+                  style: {
+                    marginTop: 16,
+                    fontSize: 12,
+                    fontFamily: 'Archivo',
+                    color: 'var(--text-faint)',
+                    lineHeight: 1.55,
+                  },
+                },
+                'Sign-in is not configured on this server yet. Ask the admin to set Google / Telegram credentials.'
+              )
+            : null,
+          p.google
+            ? h(
+                'button',
+                {
+                  key: 'google',
+                  disabled: st.authBusy,
+                  style: ps(
+                    "margin-top:16px;width:100%;height:42px;border:none;border-radius:999px;background:var(--accent);color:var(--on-accent);font:600 13px 'Archivo';cursor:pointer;"
+                  ),
+                  onClick: function () {
+                    IVAN.startGoogleLogin(location.pathname + location.search);
+                  },
+                },
+                'Continue with Google'
+              )
+            : null,
+          p.telegram
+            ? h(
+                'div',
+                {
+                  key: 'tg',
+                  style: {
+                    marginTop: 14,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 8,
+                  },
+                },
+                h(
+                  'div',
+                  {
+                    style: ps(
+                      "font:500 10px 'IBM Plex Mono';letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);"
+                    ),
+                  },
+                  'or Telegram'
+                ),
+                h('div', {
+                  ref: function (el) {
+                    self._tgBox = el;
+                  },
+                  style: { minHeight: 40 },
+                }),
+                st.authBusy
+                  ? h(
+                      'div',
+                      {
+                        style: {
+                          fontSize: 11,
+                          fontFamily: 'Archivo',
+                          color: 'var(--text-faint)',
+                        },
+                      },
+                      'Signing in…'
+                    )
+                  : null
+              )
+            : null,
+          h(
+            'button',
+            {
+              key: 'cancel',
+              style: ps(
+                "margin-top:12px;width:100%;height:36px;border:1px solid var(--hairline);border-radius:999px;background:transparent;color:var(--text-dim);font:500 12.5px 'Archivo';cursor:pointer;"
+              ),
+              onClick: function () {
+                self.closeAuth();
+              },
+            },
+            'Not now'
+          )
+        ),
+      ];
     }
 
     starStyle(active) {
@@ -1099,7 +1463,12 @@
                             },
                             'Tap ☆ on any index to keep it here.'
                           )
-                        : watchItems.map(function (m) {
+                        : null,
+                      !st.user
+                        ? self.renderSignInCta({ key: 'yours-signin', marginTop: 10, label: 'Sign-in to save your list' })
+                        : self.renderSignInCta({ key: 'yours-user', marginTop: 10 }),
+                      st.watch.length
+                        ? watchItems.map(function (m) {
                             var s = m.series;
                             var ch = IVAN.fmtChange(m, s[s.length - 1], s[s.length - 2]);
                             return h(
@@ -1164,7 +1533,8 @@
                                 '×'
                               )
                             );
-                          }),
+                          })
+                        : null,
                       alertList.length
                         ? [
                             h(
@@ -1414,6 +1784,33 @@
               h(
                 'div',
                 { key: 'theme', style: { display: 'flex', flexDirection: 'column', gap: 8, padding: '14px 14px 0' } },
+                // Аккаунт рядом с темой — быстрый вход без открытия Watchlist
+                st.user
+                  ? h(
+                      'button',
+                      {
+                        title: st.user.displayName || 'Account',
+                        style: ps(
+                          "height:36px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;border:1px solid var(--hairline);background:transparent;color:var(--text-dim);font:500 12px 'Archivo';cursor:pointer;"
+                        ),
+                        onClick: function () {
+                          self.signOut();
+                        },
+                      },
+                      'Sign out'
+                    )
+                  : h(
+                      'button',
+                      {
+                        style: ps(
+                          "height:36px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;border:1px solid var(--hairline);background:transparent;color:var(--text-dim);font:500 12px 'Archivo';cursor:pointer;"
+                        ),
+                        onClick: function () {
+                          self.openAuth();
+                        },
+                      },
+                      'Sign in'
+                    ),
                 h(
                   'button',
                   {
@@ -1475,6 +1872,20 @@
                 'IVAN'
               ),
               h('div', { style: { width: 20, height: 1, background: 'var(--hairline)' } }),
+              h(
+                'button',
+                {
+                  title: st.user ? 'Sign out' : 'Sign in',
+                  style: ps(
+                    'width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--hairline);background:transparent;color:var(--text-dim);font-size:13px;cursor:pointer;'
+                  ),
+                  onClick: function () {
+                    if (st.user) self.signOut();
+                    else self.openAuth();
+                  },
+                },
+                st.user ? '⎋' : '⇢'
+              ),
               h(
                 'button',
                 {
@@ -3160,13 +3571,18 @@
         })
         .filter(Boolean);
 
-      return [
+      // Модалка Sign-in — массив узлов; разворачиваем, чтобы не плодить вложенные массивы в children.
+      var nodes = [].concat(self.renderAuthModal(st) || []);
+
+      nodes.push(
         st.reqOpen
           ? h(
               'div',
               { key: 'req-bg', onClick: function () { self.setState({ reqOpen: false, reqSent: false }); }, style: { position: 'fixed', inset: 0, background: 'rgba(1,20,28,.45)', zIndex: 110 } }
             )
-          : null,
+          : null
+      );
+      nodes.push(
         st.reqOpen
           ? h(
               'div',
@@ -3331,57 +3747,71 @@
                   'div',
                   { style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 } },
                   h('div', { style: { fontFamily: 'Newsreader', fontWeight: 500, fontSize: 19, color: 'var(--text)' } }, 'Watchlist'),
-                  h('span', { style: ps("font:500 10px 'IBM Plex Mono';letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);") }, 'saved locally')
+                  h(
+                    'span',
+                    { style: ps("font:500 10px 'IBM Plex Mono';letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);") },
+                    st.user ? 'synced' : 'saved locally'
+                  )
                 ),
                 !st.watch.length
-                  ? h('div', { style: { fontSize: 12, color: 'var(--text-faint)', marginTop: 8, fontFamily: 'Archivo', lineHeight: 1.6 } }, 'Nothing saved yet. Tap ☆ on any index to keep it here — no account needed.')
-                  : [
-                      h(
-                        'div',
-                        { key: 'wl', style: { display: 'flex', flexDirection: 'column', marginTop: 12, maxHeight: 280, overflowY: 'auto' } },
-                        watchPanelItems.map(function (m) {
-                          var s = m.series;
-                          var ch = IVAN.fmtChange(m, s[s.length - 1], s[s.length - 2]);
-                          return h(
-                            'div',
-                            {
-                              key: m.id,
-                              style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: '1px solid var(--hairline)', cursor: 'pointer' },
-                              onClick: function () {
-                                self.setState({ watchOpen: false });
-                                self.openIndex(m.id);
-                              },
+                  ? h(
+                      'div',
+                      { style: { fontSize: 12, color: 'var(--text-faint)', marginTop: 8, fontFamily: 'Archivo', lineHeight: 1.6 } },
+                      'Nothing saved yet. Tap ☆ on any index to keep it here.'
+                    )
+                  : h(
+                      'div',
+                      { key: 'wl', style: { display: 'flex', flexDirection: 'column', marginTop: 12, maxHeight: 280, overflowY: 'auto' } },
+                      watchPanelItems.map(function (m) {
+                        var s = m.series;
+                        var ch = IVAN.fmtChange(m, s[s.length - 1], s[s.length - 2]);
+                        return h(
+                          'div',
+                          {
+                            key: m.id,
+                            style: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: '1px solid var(--hairline)', cursor: 'pointer' },
+                            onClick: function () {
+                              self.setState({ watchOpen: false });
+                              self.openIndex(m.id);
                             },
-                            h(
-                              'div',
-                              { style: { flex: 1, minWidth: 0 } },
-                              h('div', { style: { fontSize: 12.5, fontFamily: 'Archivo', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, m.name),
-                              h('div', { style: { display: 'flex', gap: 8, font: "500 11px 'IBM Plex Mono'", marginTop: 3 } },
-                                h('span', { style: { color: 'var(--text-dim)' } }, IVAN.valStr(m, s[s.length - 1])),
-                                h('span', { style: { color: ch.up ? 'var(--up)' : 'var(--down)' } }, ch.txt)
-                              )
-                            ),
-                            h('button', {
-                              title: 'Remove',
-                              style: ps('width:24px;height:24px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--hairline);background:transparent;color:var(--text-faint);font-size:12px;cursor:pointer;'),
-                              onClick: function (e) { e.stopPropagation(); self.toggleWatch(m.id); },
-                            }, '×')
-                          );
-                        })
+                          },
+                          h(
+                            'div',
+                            { style: { flex: 1, minWidth: 0 } },
+                            h('div', { style: { fontSize: 12.5, fontFamily: 'Archivo', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, m.name),
+                            h('div', { style: { display: 'flex', gap: 8, font: "500 11px 'IBM Plex Mono'", marginTop: 3 } },
+                              h('span', { style: { color: 'var(--text-dim)' } }, IVAN.valStr(m, s[s.length - 1])),
+                              h('span', { style: { color: ch.up ? 'var(--up)' : 'var(--down)' } }, ch.txt)
+                            )
+                          ),
+                          h('button', {
+                            title: 'Remove',
+                            style: ps('width:24px;height:24px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--hairline);background:transparent;color:var(--text-faint);font-size:12px;cursor:pointer;'),
+                            onClick: function (e) { e.stopPropagation(); self.toggleWatch(m.id); },
+                          }, '×')
+                        );
+                      })
+                    ),
+                // Главный CTA: сохранить список на аккаунте
+                self.renderSignInCta({ key: 'watch-signin', marginTop: 14 }),
+                st.watch.length
+                  ? h('button', {
+                      key: 'saved',
+                      style: ps(
+                        st.user
+                          ? "margin-top:8px;width:100%;height:38px;border:none;border-radius:999px;background:var(--accent);color:var(--on-accent);font:600 12.5px 'Archivo';cursor:pointer;"
+                          : "margin-top:8px;width:100%;height:38px;border:1px solid var(--border-s);border-radius:999px;background:transparent;color:var(--text);font:500 12.5px 'Archivo';cursor:pointer;"
                       ),
-                      h('button', {
-                        key: 'saved',
-                        style: ps("margin-top:14px;width:100%;height:38px;border:none;border-radius:999px;background:var(--accent);color:var(--on-accent);font:600 12.5px 'Archivo';cursor:pointer;"),
-                        onClick: function () { self.applyFilter('saved'); },
-                      }, 'Show saved only'),
-                      st.watch.length > 1
-                        ? h('button', {
-                            key: 'cs',
-                            style: ps("margin-top:8px;width:100%;height:38px;border:1px solid var(--border-s);border-radius:999px;background:transparent;color:var(--text);font:500 12.5px 'Archivo';cursor:pointer;"),
-                            onClick: function () { self.setState({ compare: st.watch.slice(0, 3), watchOpen: false }); },
-                          }, 'Compare saved · ' + Math.min(3, st.watch.length))
-                        : null,
-                    ]
+                      onClick: function () { self.applyFilter('saved'); },
+                    }, 'Show saved only')
+                  : null,
+                st.watch.length > 1
+                  ? h('button', {
+                      key: 'cs',
+                      style: ps("margin-top:8px;width:100%;height:38px;border:1px solid var(--border-s);border-radius:999px;background:transparent;color:var(--text);font:500 12.5px 'Archivo';cursor:pointer;"),
+                      onClick: function () { self.setState({ compare: st.watch.slice(0, 3), watchOpen: false }); },
+                    }, 'Compare saved · ' + Math.min(3, st.watch.length))
+                  : null
               )
             : null,
           h(
@@ -3399,8 +3829,10 @@
             h('span', { style: { fontSize: 16, lineHeight: 1 } }, st.watch.length ? '★' : '☆'),
             h('span', { 'data-wlabel': '1' }, st.watch.length ? 'Watchlist · ' + st.watch.length : 'Watchlist')
           )
-        ),
-      ];
+        )
+      );
+
+      return nodes;
     }
 
     render() {

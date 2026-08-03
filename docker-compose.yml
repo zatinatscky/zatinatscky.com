@@ -30,6 +30,13 @@ services:
       AUTO_SYNC_ON_START: "true"
       DASH_ROOT_HOST: ${DASH_ROOT_HOST}
       CRON_TOKEN: ${CRON_TOKEN}
+      # Сессии и OAuth (см. .env.example). Пустые Google/Telegram → кнопки скрыты.
+      SECRET_KEY: ${SECRET_KEY:-dev-only-change-me}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://ivan.zatinatscky.com}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
     # Наружу не публикуем — доступ только через Caddy по внутренней сети.
     expose:
       - "8050"
