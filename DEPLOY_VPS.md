@@ -122,6 +122,13 @@ web-контейнера (Fear & Greed + цены BTC) и запускает `py
 здесь делать **не нужно**: локальное изменение прав git считает модификацией
 файла, и она блокирует последующие `git pull`, которые этот файл затрагивают.
 
+На всякий случай стоит один раз сказать клону на сервере не обращать внимания
+на права — тогда любые будущие `chmod` не превратятся в мнимые правки:
+
+```bash
+git config core.fileMode false
+```
+
 ```bash
 sudo cp deploy/fng-sync.service /etc/systemd/system/
 sudo cp deploy/fng-sync.timer   /etc/systemd/system/
@@ -239,7 +246,7 @@ Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `
 | Пустой `/fng/` | БД пустая — `sudo systemctl start fng-sync.service`, затем обновить страницу |
 | Терминал пишет «Index data unavailable» | Таблицы индексов пустые — `docker compose exec -T web python -m indices.sync`. Значения намеренно не подставляются из генератора, поэтому до первой синхронизации страница честно показывает ошибку |
 | `ModuleNotFoundError: indices` | `git pull` не прошёл (см. следующую строку) или образ не пересобран — `docker compose up -d --build` |
-| `git pull` → `Your local changes would be overwritten` | На сервере есть локальные правки. Посмотреть `git diff -- <файл>`; если это только права после `chmod +x` — `git checkout -- <файл>` и повторить `git pull`. Бит запуска теперь хранится в git, ручной `chmod` больше не нужен |
+| `git pull` → `Your local changes would be overwritten` | Обычно это следы старого `chmod +x`: git считает смену прав модификацией файла. Лечится один раз — `git config core.fileMode false && git checkout -- deploy/`, дальше `git pull`. Сбрасывать файлы по одному не надо: `chmod` делался сразу для `fng-sync.sh` и `backup.sh`, и пул упрётся во второй файл. Проверить, что других правок нет: `git status --porcelain` |
 | `web` не стартует | `.env` заполнен? `docker compose config` без ошибок? |
 | Долгий первый старт | Нормально: грузится история F&G + BTC (несколько минут) |
 | Синк индексов идёт долго | Нормально: полный проход ~4 минуты (пагинация Binance, чанки Deribit, троттлинг bitcoin-data). В `fng-sync.service` под это поднят `TimeoutStartSec=1800` |
