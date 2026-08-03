@@ -114,11 +114,15 @@ dig ivan.zatinatscky.com A +short      # должно показать 13.140.15
 
 ## 5. Ежедневная синхронизация (systemd timer)
 
-Скрипт `deploy/fng-sync.sh` дёргает `/jobs/fng-sync` внутри web-контейнера.
+Скрипт `deploy/fng-sync.sh` делает два шага: дёргает `/jobs/fng-sync` внутри
+web-контейнера (Fear & Greed + цены BTC) и запускает `python -m indices.sync`
+(ряды индексов терминала).
+
+Бит запуска у скриптов проставлен в самом git (`100755`), поэтому `chmod +x`
+здесь делать **не нужно**: локальное изменение прав git считает модификацией
+файла, и она блокирует последующие `git pull`, которые этот файл затрагивают.
 
 ```bash
-chmod +x deploy/fng-sync.sh deploy/backup.sh
-
 sudo cp deploy/fng-sync.service /etc/systemd/system/
 sudo cp deploy/fng-sync.timer   /etc/systemd/system/
 sudo systemctl daemon-reload
@@ -219,7 +223,10 @@ Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `
 | Остановить всё | `docker compose down` |
 | Поднять всё | `docker compose up -d` |
 | Зайти в БД | `docker compose exec db psql -U ivan -d zatinatscky` |
-| Ручной синк | `sudo systemctl start fng-sync.service` |
+| Ручной синк (всё) | `sudo systemctl start fng-sync.service` |
+| Синк только индексов | `docker compose exec -T web python -m indices.sync` |
+| Один индекс | `docker compose exec -T web python -m indices.sync vix` |
+| Состояние индексов | `docker compose exec -T web python -m indices.sync --report` |
 
 ---
 
@@ -230,8 +237,12 @@ Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `
 | Caddy не выпускает сертификат | DNS `ivan` → IP сервера (A, серая туча); порты 80/443 открыты в `ufw`; `docker compose logs caddy` |
 | `502` в браузере | web ещё грузит данные на старте — `docker compose logs -f web`; healthcheck `docker compose ps` |
 | Пустой `/fng/` | БД пустая — `sudo systemctl start fng-sync.service`, затем обновить страницу |
+| Терминал пишет «Index data unavailable» | Таблицы индексов пустые — `docker compose exec -T web python -m indices.sync`. Значения намеренно не подставляются из генератора, поэтому до первой синхронизации страница честно показывает ошибку |
+| `ModuleNotFoundError: indices` | `git pull` не прошёл (см. следующую строку) или образ не пересобран — `docker compose up -d --build` |
+| `git pull` → `Your local changes would be overwritten` | На сервере есть локальные правки. Посмотреть `git diff -- <файл>`; если это только права после `chmod +x` — `git checkout -- <файл>` и повторить `git pull`. Бит запуска теперь хранится в git, ручной `chmod` больше не нужен |
 | `web` не стартует | `.env` заполнен? `docker compose config` без ошибок? |
 | Долгий первый старт | Нормально: грузится история F&G + BTC (несколько минут) |
+| Синк индексов идёт долго | Нормально: полный проход ~4 минуты (пагинация Binance, чанки Deribit, троттлинг bitcoin-data). В `fng-sync.service` под это поднят `TimeoutStartSec=1800` |
 
 ---
 
@@ -243,4 +254,5 @@ Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `
 - [ ] DNS `ivan` → `13.140.157.222` (A), старый CNAME удалён
 - [ ] `https://ivan.zatinatscky.com/` и `/fng/` открываются по HTTPS
 - [ ] `fng-sync.timer` включён (`systemctl list-timers`)
+- [ ] Индексы прогружены (`docker compose exec -T web python -m indices.sync --report` — все строки `OK`)
 - [ ] Бэкап работает (`./deploy/backup.sh`), добавлен в cron
