@@ -1,10 +1,13 @@
 # systemd-сервис: разовый запуск синхронизации (вызывается таймером).
 # Установка: см. DEPLOY_VPS.md (копировать в /etc/systemd/system/).
 [Unit]
-Description=IVAN Fear & Greed daily sync
+Description=IVAN daily data sync (Fear & Greed, BTC, index series)
 After=docker.service
 Requires=docker.service
 
 [Service]
 Type=oneshot
 ExecStart=/home/ivan/zatinatscky/deploy/fng-sync.sh
+# Полный проход по всем источникам занимает несколько минут (пагинация Binance,
+# чанки Deribit, троттлинг bitcoin-data). Дефолтные 90 секунд его обрубают.
+TimeoutStartSec=1800

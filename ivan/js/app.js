@@ -45,8 +45,8 @@
   class IvanApp extends React.Component {
     constructor(props) {
       super(props);
-      // Мок-данные один раз на жизнь компонента
-      this.data = IVAN.genData();
+      // Реальные данные из /api/indexes, загружены в IVAN.boot() до первого рендера.
+      this.data = props.data;
       this.state = {
         theme: (props && props.theme) || 'light',
         // Handoff default accent (#DDBA9B) — линии графиков, CTA, chips.
@@ -492,6 +492,10 @@
       var about = {
         measures: meta.measures,
         method: meta.method,
+        // Как индекс отражает поведение рынка и как читать его изменения —
+        // приходят из indices/registry.py вместе с остальными метаданными.
+        behaviour: meta.behaviour,
+        reading: meta.reading,
         source: meta.source,
         url: meta.url,
         cat: tg.join(' · '),
@@ -2429,32 +2433,52 @@
                 },
                 'About this index'
               ),
-              h(
-                'p',
-                {
-                  style: {
-                    fontSize: 13.5,
-                    fontFamily: 'Archivo',
-                    color: 'var(--text-dim)',
-                    lineHeight: 1.7,
-                    margin: '12px 0 0',
-                  },
-                },
-                about.measures
-              ),
-              h(
-                'p',
-                {
-                  style: {
-                    fontSize: 12.5,
-                    fontFamily: 'Archivo',
-                    color: 'var(--text-faint)',
-                    lineHeight: 1.7,
-                    margin: '11px 0 0',
-                  },
-                },
-                about.method
-              )
+              // Четыре раздела: что показывает, как считается, что говорит о
+              // рынке и как читать изменения. Пустые поля пропускаем, чтобы
+              // блок не разъезжался, если у индекса нет части описания.
+              [
+                { label: 'What it measures', text: about.measures, lead: true },
+                { label: 'How it is calculated', text: about.method },
+                { label: 'What it says about the market', text: about.behaviour },
+                { label: 'How to read changes', text: about.reading },
+              ]
+                .filter(function (s) {
+                  return !!s.text;
+                })
+                .map(function (s, i) {
+                  return h(
+                    'div',
+                    { key: s.label, style: { marginTop: i === 0 ? 18 : 20 } },
+                    h(
+                      'div',
+                      {
+                        style: {
+                          fontFamily: 'IBM Plex Mono',
+                          fontSize: 9.5,
+                          fontWeight: 500,
+                          letterSpacing: '0.16em',
+                          textTransform: 'uppercase',
+                          color: 'var(--text-faint)',
+                          marginBottom: 7,
+                        },
+                      },
+                      s.label
+                    ),
+                    h(
+                      'p',
+                      {
+                        style: {
+                          fontSize: s.lead ? 13.5 : 12.5,
+                          fontFamily: 'Archivo',
+                          color: s.lead ? 'var(--text-dim)' : 'var(--text-faint)',
+                          lineHeight: 1.7,
+                          margin: 0,
+                        },
+                      },
+                      s.text
+                    )
+                  );
+                })
             )
           ),
           h(
@@ -3425,21 +3449,157 @@
     }
   }
 
-  /** Точка входа: читает dataset.body и монтирует React 18 root */
+  /**
+   * Экран загрузки на время запроса к /api/indexes.
+   *
+   * Тему берёт из тех же CSS-переменных, что и приложение, поэтому переход к
+   * готовому интерфейсу не мигает фоном.
+   */
+  function BootSkeleton() {
+    return h(
+      'div',
+      {
+        style: mergeStyle(
+          IVAN.rootStyleCss('light', '#DDBA9B'),
+          'align-items:center;justify-content:center;flex-direction:column;gap:14px;'
+        ),
+      },
+      h(
+        'div',
+        {
+          style: {
+            fontFamily: 'Newsreader',
+            fontSize: 28,
+            fontWeight: 500,
+            letterSpacing: '-0.01em',
+          },
+        },
+        'IVAN'
+      ),
+      h(
+        'div',
+        {
+          style: {
+            fontFamily: 'IBM Plex Mono',
+            fontSize: 11,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--text-faint)',
+          },
+        },
+        'Loading index data…'
+      )
+    );
+  }
+
+  /**
+   * Экран ошибки, если /api/indexes недоступен.
+   *
+   * Сознательно не подставляем сгенерированные данные: показать выдуманные
+   * значения индексов как настоящие хуже, чем честно сказать, что данных нет.
+   */
+  function BootError(props) {
+    return h(
+      'div',
+      {
+        style: mergeStyle(
+          IVAN.rootStyleCss('light', '#DDBA9B'),
+          'align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:32px;text-align:center;'
+        ),
+      },
+      h(
+        'div',
+        { style: { fontFamily: 'Newsreader', fontSize: 26, fontWeight: 500 } },
+        'Index data unavailable'
+      ),
+      h(
+        'div',
+        {
+          style: {
+            fontFamily: 'Archivo',
+            fontSize: 14,
+            lineHeight: 1.6,
+            color: 'var(--text-dim)',
+            maxWidth: 420,
+          },
+        },
+        'The terminal could not load index data from the server. Values are never simulated, so nothing is shown until the feed is back.'
+      ),
+      h(
+        'button',
+        {
+          onClick: function () {
+            window.location.reload();
+          },
+          style: {
+            marginTop: 4,
+            padding: '11px 20px',
+            border: 'none',
+            cursor: 'pointer',
+            background: 'var(--accent)',
+            color: 'var(--on-accent)',
+            fontFamily: 'IBM Plex Mono',
+            fontSize: 11.5,
+            fontWeight: 500,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+          },
+        },
+        'Retry'
+      ),
+      props && props.detail
+        ? h(
+            'div',
+            {
+              style: {
+                fontFamily: 'IBM Plex Mono',
+                fontSize: 10.5,
+                color: 'var(--text-faint)',
+                marginTop: 8,
+              },
+            },
+            String(props.detail)
+          )
+        : null
+    );
+  }
+
+  /**
+   * Точка входа: читает dataset.body, грузит реальные данные и монтирует React 18.
+   *
+   * Данные тянутся до первого рендера, потому что IvanApp читает this.data уже в
+   * конструкторе. Пока запрос в пути — скелетон, при отказе бэкенда — экран ошибки.
+   */
   IVAN.boot = function () {
     var page = document.body.dataset.page || 'home';
     var indexId = document.body.dataset.indexId || null;
     var rootEl = document.getElementById('root');
     if (!rootEl) return;
 
-    // Заголовок вкладки: на detail — имя индекса из тех же mock-данных.
-    if (page === 'detail' && indexId && IVAN.getIndexById) {
-      var meta = IVAN.getIndexById(indexId);
-      if (meta) document.title = meta.name + ' — IVAN';
+    var root = ReactDOM.createRoot(rootEl);
+    root.render(h(BootSkeleton));
+
+    if (!IVAN.loadData) {
+      root.render(h(BootError, { detail: 'data-api.js not loaded' }));
+      return;
     }
 
-    var root = ReactDOM.createRoot(rootEl);
-    root.render(h(IvanApp, { page: page, indexId: indexId }));
+    IVAN.loadData().then(
+      function (data) {
+        // Заголовок вкладки: на detail — имя индекса из полученных метаданных.
+        if (page === 'detail' && indexId) {
+          var meta = (data.indexes || []).find(function (m) {
+            return m.id === indexId;
+          });
+          if (meta) document.title = meta.name + ' — IVAN';
+        }
+        root.render(h(IvanApp, { page: page, indexId: indexId, data: data }));
+      },
+      function (err) {
+        console.error('IVAN: не удалось загрузить /api/indexes', err);
+        root.render(h(BootError, { detail: err && err.message }));
+      }
+    );
   };
 
   global.IvanApp = IvanApp;

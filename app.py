@@ -19,38 +19,21 @@ from sqlalchemy import text
 
 from fng_data import full_refresh, get_engine
 from fng_dash_layout import build_dashboard_shell_layout, register_dash_callbacks
+from indices.registry import INDEX_IDS
+from indices.series import build_index_payload
+from indices.store import load_sync_status
+from indices.sync import sync_all
 
 
 ROOT_DIR = Path(__file__).resolve().parent
 IVAN_DIR = ROOT_DIR / "ivan"
-# Id индексов IVAN Terminal (должен совпадать с ivan/js/mock-data.js INDEX_IDS).
-IVAN_INDEX_IDS = frozenset(
-    {
-        "fng",
-        "altseason",
-        "btcdom",
-        "bvol",
-        "nupl",
-        "ssr",
-        "funding",
-        "mvrv",
-        "vix",
-        "spx",
-        "stoxx",
-        "nikkei",
-        "cnnfng",
-        "gold",
-        "brent",
-        "bcom",
-        "us10y",
-        "uscpi",
-        "cnpmi",
-        "ifo",
-        "gscpi",
-        "dxy",
-    }
-)
+# Id индексов IVAN Terminal — из реестра indices/registry.py, единственного
+# источника правды. Раньше список дублировался здесь руками и в mock-data.js.
+IVAN_INDEX_IDS = frozenset(INDEX_IDS)
 CRON_TOKEN = os.getenv("CRON_TOKEN", "")
+# Сколько дней истории отдаёт /api/indexes по умолчанию (окно терминала).
+API_DEFAULT_DAYS = 365
+API_MAX_DAYS = 1825
 # Host, на котором / — welcome IVAN (не визитка). На Render задайте в Environment или оставьте default.
 DASH_ROOT_HOST = os.getenv("DASH_ROOT_HOST", "ivan.zatinatscky.com").strip().lower()
 # Пустая строка в env отключает привязку к субдомену (удобно для особых деплоев).
@@ -197,6 +180,49 @@ def create_server() -> Flask:
             "history": [int(r[1]) for r in ordered],
         }
 
+    @server.get("/api/indexes")
+    def api_indexes():
+        """
+        Реальные данные для IVAN Terminal: календарь дат, цена BTC и ряды индексов.
+
+        Заменяет мок-генератор ivan/js/mock-data.js. Ряды выровнены по общему
+        календарю (forward-fill в indices/series.py), поэтому фронтенд может
+        обращаться к ним по индексу, как раньше к сгенерированным.
+        """
+        try:
+            days = int(request.args.get("days", API_DEFAULT_DAYS))
+        except ValueError:
+            days = API_DEFAULT_DAYS
+        # Ограничиваем окно: без верхней границы запрос ?days=999999 заставил бы
+        # сервер собрать гигантский ответ.
+        days = max(30, min(days, API_MAX_DAYS))
+
+        try:
+            payload = build_index_payload(get_engine(), days=days)
+        except Exception:
+            logging.getLogger(__name__).exception("Не удалось собрать /api/indexes")
+            return {"error": "unavailable"}, 503
+
+        if not payload["indexes"]:
+            return {"error": "no data"}, 404
+
+        response = Response(
+            json.dumps(payload, ensure_ascii=False),
+            mimetype="application/json; charset=utf-8",
+        )
+        # Данные меняются раз в сутки — час кэша снимает нагрузку с БД,
+        # stale-while-revalidate отдаёт страницу мгновенно во время обновления.
+        response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+        return response
+
+    @server.get("/api/indexes/status")
+    def api_indexes_status():
+        """Состояние последней синхронизации по каждому индексу — для мониторинга."""
+        try:
+            return {"indexes": load_sync_status(get_engine())}
+        except Exception:
+            return {"error": "unavailable"}, 503
+
     @server.get("/robots.txt")
     def robots_txt():
         """robots зависит от Host: ivan.* — продукт, апекс — статический файл консалтинга."""
@@ -233,19 +259,44 @@ def create_server() -> Flask:
         # Апекс zatinatscky.com — sitemap из репозитория (консалтинг).
         return send_from_directory(ROOT_DIR, "sitemap.xml")
 
+    def _cron_authorized() -> bool:
+        """Проверка токена для служебных джобов (постоянное сравнение)."""
+        req_token = str(request.args.get("token", ""))
+        return bool(CRON_TOKEN) and compare_digest(req_token, CRON_TOKEN)
+
     @server.get("/jobs/fng-sync")
     def sync_job():
         """
-        Эндпоинт для Render Cron.
+        Синхронизация Fear & Greed и цен BTC для дашборда /fng/.
 
         Защита: ?token=... и compare_digest с CRON_TOKEN.
         """
-        req_token = str(request.args.get("token", ""))
-        if not CRON_TOKEN or not compare_digest(req_token, CRON_TOKEN):
+        if not _cron_authorized():
             return {"status": "forbidden"}, 403
 
         upserted = full_refresh(get_engine())
         return {"status": "ok", "upserted": upserted}
+
+    @server.get("/jobs/indexes-sync")
+    def indexes_sync_job():
+        """
+        Ежедневная синхронизация всех индексов терминала.
+
+        Вызывается systemd-таймером на VPS (deploy/fng-sync.sh). Возвращает
+        результат по каждому индексу: падение одного источника не отменяет
+        остальные, поэтому статус 'ok' означает, что обновился хотя бы один.
+        """
+        if not _cron_authorized():
+            return {"status": "forbidden"}, 403
+
+        results = sync_all(get_engine())
+        synced = [r.index_id for r in results if r.ok]
+        failed = {r.index_id: r.error for r in results if not r.ok}
+        return {
+            "status": "ok" if synced else "failed",
+            "synced": synced,
+            "failed": failed,
+        }
 
     @server.errorhandler(404)
     def not_found(_err):
