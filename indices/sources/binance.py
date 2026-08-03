@@ -25,12 +25,15 @@ _log = logging.getLogger(__name__)
 
 FUNDING_URL = "https://fapi.binance.com/fapi/v1/fundingRate"
 KLINES_URL = "https://api.binance.com/api/v3/klines"
+FUTURES_KLINES_URL = "https://fapi.binance.com/fapi/v1/klines"
 TICKER_24H_URL = "https://api.binance.com/api/v3/ticker/24hr"
 
 PAGE_LIMIT = 1000
 MS_PER_DAY = 86_400_000
 
 Point = tuple[str, float]
+# Дневная свеча в том виде, в каком она нужна дальше: закрытие и оборот в USDT.
+Candle = tuple[float, float]
 
 
 def _day_utc(ms: int) -> str:
@@ -86,15 +89,24 @@ def fetch_funding_rate(symbol: str = "BTCUSDT") -> list[Point]:
     return points
 
 
-def fetch_daily_closes(symbol: str, start_ms: int) -> dict[str, float]:
-    """Дневные закрытия пары как {день UTC: close}, начиная с start_ms."""
+def fetch_daily_candles(symbol: str, start_ms: int, futures: bool = False) -> dict[str, Candle]:
+    """
+    Дневные свечи пары как {день UTC: (close, оборот в USDT)}.
+
+    futures=True берёт бессрочный контракт (fapi) вместо спота — нужно для
+    объёма под ставку финансирования, которая считается по тому же контракту.
+
+    Индексы полей свечи: 0 — open time, 4 — close, 7 — quote asset volume.
+    https://binance-docs.github.io/apidocs/spot/en/#kline-candlestick-data
+    """
+    url = FUTURES_KLINES_URL if futures else KLINES_URL
     cursor_ms = start_ms
     now_ms = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
-    closes: dict[str, float] = {}
+    candles: dict[str, Candle] = {}
 
     while cursor_ms <= now_ms:
         page = get_json(
-            KLINES_URL,
+            url,
             params={
                 "symbol": symbol,
                 "interval": "1d",
@@ -106,14 +118,35 @@ def fetch_daily_closes(symbol: str, start_ms: int) -> dict[str, float]:
             break
 
         for row in page:
-            closes[_day_utc(int(row[0]))] = float(row[4])
+            candles[_day_utc(int(row[0]))] = (float(row[4]), float(row[7]))
 
         last_open = int(page[-1][0])
         cursor_ms = last_open + MS_PER_DAY
         if len(page) < PAGE_LIMIT:
             break
 
-    return closes
+    return candles
+
+
+def fetch_daily_closes(symbol: str, start_ms: int) -> dict[str, float]:
+    """Только дневные закрытия пары как {день UTC: close}."""
+    return {day: c[0] for day, c in fetch_daily_candles(symbol, start_ms).items()}
+
+
+def fetch_daily_quote_volumes(symbol: str, start_ms: int, futures: bool = False) -> list[Point]:
+    """Дневной оборот пары в USDT как [(YYYY-MM-DD, quote_volume)]."""
+    candles = fetch_daily_candles(symbol, start_ms, futures=futures)
+    points = sorted((day, c[1]) for day, c in candles.items())
+    if not points:
+        raise RuntimeError(f"Binance {symbol}: пустой ряд объёмов")
+    _log.info(
+        "Binance оборот %s (%s): %s дней, последняя %s",
+        symbol,
+        "futures" if futures else "spot",
+        len(points),
+        points[-1][0],
+    )
+    return points
 
 
 def tradable_usdt_symbols() -> set[str]:

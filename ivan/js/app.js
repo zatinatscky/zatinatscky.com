@@ -2328,30 +2328,34 @@
                   : null
               )
             ),
-            // Легенда Volume — как в handoff (столбики объёма на графике).
-            h(
-              'div',
-              {
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  fontSize: 11.5,
-                  fontFamily: 'Archivo',
-                  color: 'var(--text-dim)',
-                },
-              },
-              h('span', {
-                style: {
-                  width: 10,
-                  height: 11,
-                  background: 'var(--accent)',
-                  opacity: 0.3,
-                  borderRadius: 2,
-                },
-              }),
-              'Volume'
-            ),
+            // Легенда объёма — только у индексов, привязанных к торгуемому рынку.
+            // Подпись берём из метаданных: у ставки финансирования это оборот
+            // бессрочного контракта, у остальных крипто-индексов — спота.
+            dmeta.volume && dmeta.volumeLabel
+              ? h(
+                  'div',
+                  {
+                    style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 7,
+                      fontSize: 11.5,
+                      fontFamily: 'Archivo',
+                      color: 'var(--text-dim)',
+                    },
+                  },
+                  h('span', {
+                    style: {
+                      width: 10,
+                      height: 11,
+                      background: 'var(--accent)',
+                      opacity: 0.3,
+                      borderRadius: 2,
+                    },
+                  }),
+                  dmeta.volumeLabel
+                )
+              : null,
             h('div', { style: { flex: 1 } }),
             h(
               'div',

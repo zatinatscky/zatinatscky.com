@@ -37,6 +37,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+# Рынки, чей оборот сопоставляется индексам. Какой индекс что получает и почему —
+# см. docstring модуля indices/volumes.py.
+from .volumes import BTC_PERP, BTC_SPOT, label as volume_label
+
 
 @dataclass(frozen=True)
 class IndexSpec:
@@ -59,6 +63,9 @@ class IndexSpec:
     # Откуда тянем: ключ фетчера в indices.sources.FETCHERS + его аргументы.
     fetcher: str
     params: dict = field(default_factory=dict)
+    # Рынок, чей дневной оборот показывать столбиками под графиком (см. volumes.py).
+    # None — объёма у индекса нет, и столбики не рисуются вовсе.
+    volume_market: str | None = None
     country: str | None = None
     unit: str = ""
     pre: str = ""
@@ -102,6 +109,7 @@ SPECS: tuple[IndexSpec, ...] = (
             "than the level."
         ),
         fetcher="alternative_me_fng",
+        volume_market=BTC_SPOT,
     ),
     IndexSpec(
         id="altseason",
@@ -169,6 +177,7 @@ SPECS: tuple[IndexSpec, ...] = (
         ),
         fetcher="deribit_dvol",
         params={"currency": "BTC"},
+        volume_market=BTC_SPOT,
     ),
     IndexSpec(
         id="nupl",
@@ -202,6 +211,7 @@ SPECS: tuple[IndexSpec, ...] = (
         ),
         fetcher="bitcoin_data",
         params={"path": "nupl", "value_key": "nupl"},
+        volume_market=BTC_SPOT,
     ),
     IndexSpec(
         id="ssr",
@@ -235,6 +245,7 @@ SPECS: tuple[IndexSpec, ...] = (
             "rather than from capital already sitting in the market."
         ),
         fetcher="stablecoin_supply_ratio",
+        volume_market=BTC_SPOT,
     ),
     IndexSpec(
         id="funding",
@@ -268,6 +279,9 @@ SPECS: tuple[IndexSpec, ...] = (
         ),
         fetcher="binance_funding",
         params={"symbol": "BTCUSDT"},
+        # Ставка рассчитывается по бессрочному контракту, поэтому и оборот берём
+        # по нему, а не по споту.
+        volume_market=BTC_PERP,
     ),
     IndexSpec(
         id="mvrv",
@@ -301,6 +315,7 @@ SPECS: tuple[IndexSpec, ...] = (
         ),
         fetcher="bitcoin_data",
         params={"path": "mvrv-zscore", "value_key": "mvrvZscore"},
+        volume_market=BTC_SPOT,
     ),
     # ------------------------------------------------------------- Equities
     IndexSpec(
@@ -569,4 +584,6 @@ def meta_dict(spec: IndexSpec) -> dict:
         "method": spec.method,
         "behaviour": spec.behaviour,
         "reading": spec.reading,
+        # Подпись рынка для легенды объёма; None — столбики не рисуем.
+        "volumeLabel": volume_label(spec.volume_market),
     }

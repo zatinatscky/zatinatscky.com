@@ -210,9 +210,11 @@ def create_server() -> Flask:
             json.dumps(payload, ensure_ascii=False),
             mimetype="application/json; charset=utf-8",
         )
-        # Данные меняются раз в сутки — час кэша снимает нагрузку с БД,
-        # stale-while-revalidate отдаёт страницу мгновенно во время обновления.
-        response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+        # Данные меняются раз в сутки, но окно кэша держим коротким: после
+        # ночной синхронизации свежие значения должны появляться в пределах
+        # четверти часа, а не следующего часа. stale-while-revalidate отдаёт
+        # страницу мгновенно, пока фон обновляет ответ.
+        response.headers["Cache-Control"] = "public, max-age=900, stale-while-revalidate=3600"
         return response
 
     @server.get("/api/indexes/status")

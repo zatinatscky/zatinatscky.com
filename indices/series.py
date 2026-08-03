@@ -68,19 +68,19 @@ def forward_fill(points: list[Point], days_list: list[str]) -> list[float] | Non
     return series
 
 
-def _load_btc_daily(engine: Engine, since: str) -> tuple[list[Point], list[Point]]:
+def _load_btc_price(engine: Engine, since: str) -> list[Point]:
     """
-    Дневные цена и объём BTC из btc_usd_daily как два ряда точек.
+    Дневная цена BTC из btc_usd_daily — для режима сравнения на графике индекса.
 
     Таблицу наполняет fng_data.sync_btc_prices() для дашборда /fng/; здесь она
-    переиспользуется, чтобы на графике индекса можно было наложить цену BTC.
+    переиспользуется, чтобы не тянуть те же свечи второй раз.
     """
     try:
         with engine.connect() as conn:
             rows = conn.execute(
                 text(
                     """
-                    SELECT day_utc, close_usd, quote_volume_usdt
+                    SELECT day_utc, close_usd
                       FROM btc_usd_daily
                      WHERE day_utc >= :since
                      ORDER BY day_utc
@@ -89,12 +89,10 @@ def _load_btc_daily(engine: Engine, since: str) -> tuple[list[Point], list[Point
                 {"since": since},
             ).fetchall()
     except Exception as exc:
-        _log.warning("btc_usd_daily недоступна (%s) — график пойдёт без цены BTC", exc)
-        return [], []
+        _log.warning("btc_usd_daily недоступна (%s) — сравнение с ценой BTC отключится", exc)
+        return []
 
-    price = [(str(r[0])[:10], float(r[1])) for r in rows if r[1] is not None]
-    volume = [(str(r[0])[:10], float(r[2])) for r in rows if r[2] is not None]
-    return price, volume
+    return [(str(r[0])[:10], float(r[1])) for r in rows if r[1] is not None]
 
 
 def build_index_payload(
@@ -112,7 +110,7 @@ def build_index_payload(
 
     # Один SELECT на все индексы вместо запроса на каждый.
     since = (date.fromisoformat(days_list[0]) - timedelta(days=LOOKBEHIND_DAYS)).isoformat()
-    raw = load_all_points(engine, since=since)
+    raw, raw_volumes = load_all_points(engine, since=since)
 
     indexes: list[dict] = []
     skipped: list[str] = []
@@ -126,21 +124,27 @@ def build_index_payload(
 
         meta = meta_dict(spec)
         meta["series"] = series
+        # Объём есть только у индексов, привязанных к торгуемому рынку
+        # (см. indices/volumes.py). У остальных ключа volume в ответе нет,
+        # и фронтенд не рисует столбики вовсе.
+        vol_points = raw_volumes.get(spec.id) or []
+        vol_series = forward_fill(vol_points, days_list) if vol_points else None
+        if vol_series:
+            meta["volume"] = vol_series
+        else:
+            meta["volumeLabel"] = None
         indexes.append(meta)
 
     if skipped:
         _log.warning("Нет данных в БД для индексов: %s", ", ".join(skipped))
 
-    # Цена и объём BTC — для режима сравнения на странице индекса.
-    btc_points, vol_points = _load_btc_daily(engine, since)
-    btc = forward_fill(btc_points, days_list) or []
-    vol = forward_fill(vol_points, days_list) or []
+    # Цена BTC — для режима сравнения на странице индекса.
+    btc = forward_fill(_load_btc_price(engine, since), days_list) or []
 
     return {
         "asOf": days_list[-1],
         "days": days,
         "dates": days_list,
         "btc": btc,
-        "vol": vol,
         "indexes": indexes,
     }

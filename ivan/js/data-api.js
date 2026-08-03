@@ -5,14 +5,19 @@
  * что раньше возвращал IVAN.genData(), поэтому app.js и charts.js работают с ним
  * без изменений:
  *
- *   { dates: Date[], btc: number[], vol: number[],
+ *   { dates: Date[], btc: number[],
  *     indexes: [{ id, name, domain, sub, country, source, url,
  *                 unit, pre, dec, pct, gauge,
  *                 measures, method, behaviour, reading,
- *                 series: number[] }] }
+ *                 series: number[],
+ *                 volume?: number[], volumeLabel?: string }] }
  *
  * Все ряды одной длины и выровнены по dates — этим занимается бэкенд
  * (indices/series.py, forward-fill).
+ *
+ * volume приходит только у индексов, привязанных к торгуемому рынку: оборот
+ * биткоина под графиком доходности гособлигаций не значил бы ничего. Какой
+ * индекс получает какой объём — см. indices/volumes.py.
  */
 (function (global) {
   'use strict';
@@ -49,7 +54,6 @@
         return {
           dates: payload.dates.map(parseDay),
           btc: payload.btc || [],
-          vol: payload.vol || [],
           indexes: payload.indexes,
           asOf: payload.asOf,
         };

@@ -211,7 +211,10 @@
     var span = spanMap[range] || 90;
     var a = Math.max(0, N - span);
     var S = meta.series.slice(a);
-    var V = data.vol.slice(a);
+    // Объём есть только у индексов, привязанных к торгуемому рынку (см.
+    // indices/volumes.py). Если его нет — столбики не рисуем, а высвободившуюся
+    // полосу отдаём линии индекса.
+    var V = meta.volume ? meta.volume.slice(a) : null;
     var DT = data.dates.slice(a);
     var L = S.length;
     var cw = cmpWith || 'btc';
@@ -246,8 +249,8 @@
     var padB = 40;
     var iw = W - padL - padR;
     var fullH = H - padT - padB;
-    var volH = 56;
-    var gap = 16;
+    var volH = V ? 56 : 0;
+    var gap = V ? 16 : 0;
     var lineH = fullH - volH - gap;
     var top = padT;
     var bot = padT + lineH;
@@ -261,7 +264,7 @@
     var bp = (bMax - bMin) * 0.14 || 1;
     var blo = bMin - bp;
     var bhi = bMax + bp;
-    var vMax = Math.max.apply(null, V) || 1;
+    var vMax = V ? Math.max.apply(null, V) || 1 : 1;
     var X = function (i) {
       return padL + (iw * i) / (L - 1);
     };
@@ -327,21 +330,23 @@
       }
     }
 
-    var bw = Math.max(1, (iw / L) * 0.62);
-    V.forEach(function (vv, i) {
-      var hgt = (vv / vMax) * volH;
-      kids.push(
-        h_('rect', {
-          key: 'v' + i,
-          x: X(i) - bw / 2,
-          y: padT + fullH - hgt,
-          width: bw,
-          height: hgt,
-          rx: 0.5,
-          style: { fill: 'var(--accent)', opacity: 0.18 },
-        })
-      );
-    });
+    if (V) {
+      var bw = Math.max(1, (iw / L) * 0.62);
+      V.forEach(function (vv, i) {
+        var hgt = (vv / vMax) * volH;
+        kids.push(
+          h_('rect', {
+            key: 'v' + i,
+            x: X(i) - bw / 2,
+            y: padT + fullH - hgt,
+            width: bw,
+            height: hgt,
+            rx: 0.5,
+            style: { fill: 'var(--accent)', opacity: 0.18 },
+          })
+        );
+      });
+    }
 
     var line = '';
     S.forEach(function (v, i) {
@@ -489,7 +494,7 @@
       var x = X(hover);
       var iv = S[hover];
       var bv = P ? P[hover] : null;
-      var vv = V[hover];
+      var vv = V ? V[hover] : null;
       kids.push(
         h_('line', {
           key: 'cx',
@@ -523,7 +528,9 @@
       var bwid = 176;
       var bx = x > W * 0.62 ? x - bwid - 12 : x + 12;
       var by = top + 6;
-      var bhgt = P ? 84 : 66;
+      // Дата + значение индекса — базовые 48px, плюс по строке на сравнение и
+      // на объём, если они есть. Иначе под отсутствующим объёмом остаётся пустота.
+      var bhgt = 48 + (P ? 18 : 0) + (vv != null ? 18 : 0);
       kids.push(
         h_('rect', {
           key: 'tb',
@@ -595,18 +602,22 @@
           )
         );
       }
-      kids.push(
-        h_(
-          'text',
-          {
-            key: 't3',
-            x: bx + 12,
-            y: by + (P ? 72 : 54),
-            style: { fontFamily: "'IBM Plex Mono'", fontSize: 11, fill: 'var(--text-faint)' },
-          },
-          'Volume $' + IV.kfmt(vv)
-        )
-      );
+      if (vv != null) {
+        kids.push(
+          h_(
+            'text',
+            {
+              key: 't3',
+              x: bx + 12,
+              y: by + (P ? 72 : 54),
+              style: { fontFamily: "'IBM Plex Mono'", fontSize: 11, fill: 'var(--text-faint)' },
+            },
+            // Подпись из метаданных: у ставки финансирования это оборот
+            // бессрочного контракта, а не спота.
+            (meta.volumeLabel || 'Volume') + ' $' + IV.kfmt(vv)
+          )
+        );
+      }
     }
 
     kids.push(
