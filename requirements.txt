@@ -8,3 +8,5 @@ plotly==5.24.1
 psycopg[binary]>=3.2.0
 requests==2.32.3
 sqlalchemy==2.0.36
+# Карточки Telegram-канала (telegram_feed/) — PNG без Plotly.
+Pillow>=10.0.0

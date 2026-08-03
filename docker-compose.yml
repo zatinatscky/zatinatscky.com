@@ -37,6 +37,9 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      # Канал для дневных карточек индексов (telegram_feed.publish).
+      TELEGRAM_CHANNEL_ID: ${TELEGRAM_CHANNEL_ID:-}
+      TELEGRAM_FEED_ENABLED: ${TELEGRAM_FEED_ENABLED:-true}
     # Наружу не публикуем — доступ только через Caddy по внутренней сети.
     expose:
       - "8050"

@@ -1,7 +1,8 @@
 # systemd-таймер: запускает fng-sync.service каждый день в 03:15 (время сервера).
+# Сервис тянет Fear & Greed + BTC и все индексы терминала (python -m indices.sync).
 # Persistent=true — если сервер был выключен, запуск произойдёт после включения.
 [Unit]
-Description=Run IVAN Fear & Greed sync daily
+Description=Run IVAN daily data sync (F&G, BTC, all indexes)
 
 [Timer]
 OnCalendar=*-*-* 03:15:00

@@ -5,6 +5,9 @@ data/*.db
 # Секреты VPS-деплоя — только локально/на сервере, не в git.
 .env
 
+# Черновики дневного Telegram-фида (генерируются локально / на сервере).
+telegram_feed/out/
+
 # Zip handoff не коммитим — эталон лежит распакованным в ivan/design-handoff/.
 ivan/Data-продукт*.zip
 ivan/*.zip

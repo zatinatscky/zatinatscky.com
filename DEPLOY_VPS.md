@@ -117,9 +117,10 @@ dig ivan.zatinatscky.com A +short      # должно показать 13.140.15
 
 ## 5. Ежедневная синхронизация (systemd timer)
 
-Скрипт `deploy/fng-sync.sh` делает два шага: дёргает `/jobs/fng-sync` внутри
-web-контейнера (Fear & Greed + цены BTC) и запускает `python -m indices.sync`
-(ряды индексов терминала).
+Скрипт `deploy/fng-sync.sh` делает три шага: дёргает `/jobs/fng-sync` внутри
+web-контейнера (Fear & Greed + цены BTC), запускает `python -m indices.sync`
+(ряды индексов терминала) и `python -m telegram_feed.publish` (карточки в
+Telegram-канал; без `TELEGRAM_CHANNEL_ID` шаг тихо пропускается).
 
 Бит запуска у скриптов проставлен в самом git (`100755`), поэтому `chmod +x`
 здесь делать **не нужно**: локальное изменение прав git считает модификацией
@@ -237,6 +238,8 @@ Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `
 | Синк только индексов | `docker compose exec -T web python -m indices.sync` |
 | Один индекс | `docker compose exec -T web python -m indices.sync vix` |
 | Состояние индексов | `docker compose exec -T web python -m indices.sync --report` |
+| Telegram dry-run | `docker compose exec -T web python -m telegram_feed.publish --dry-run` |
+| Telegram пост сейчас | `docker compose exec -T web python -m telegram_feed.publish` |
 
 ---
 
@@ -250,11 +253,23 @@ Caddy проксирует **`hiphop.zatinatscky.com`** → контейнер `
 2. Authorized redirect URI: `https://ivan.zatinatscky.com/api/auth/google/callback`
 3. В `.env`: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, затем `docker compose up -d` (пересоздаст `web` с новыми env).
 
-**Telegram**
+**Telegram (логин + канал)**
 
 1. Создать бота у `@BotFather`, взять token и username.
-2. `/setdomain` → `ivan.zatinatscky.com`
-3. В `.env`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` (без `@`), перезапуск `web`.
+2. `/setdomain` → `ivan.zatinatscky.com` (для Login Widget).
+3. Добавить бота **админом канала** с правом публиковать сообщения.
+4. В `.env`:
+   - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` (без `@`)
+   - `TELEGRAM_CHANNEL_ID` — `@your_channel` или `-100…`
+   - `TELEGRAM_FEED_ENABLED=true`
+5. `docker compose up -d` (подхватит env).
+
+Проверка постинга:
+
+```bash
+docker compose exec -T web python -m telegram_feed.publish --dry-run
+docker compose exec -T web python -m telegram_feed.publish
+```
 
 Обязательно также задать `SECRET_KEY` и `PUBLIC_BASE_URL` (см. `.env.example`).
 

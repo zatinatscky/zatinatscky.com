@@ -121,6 +121,15 @@ python -m indices.sync --report    # состояние БД без загруз
 `deploy/fng-sync.sh` (второй шаг после Fear & Greed), либо вручную через
 `GET /jobs/indexes-sync?token=$CRON_TOKEN`.
 
+**Telegram-карточки (черновик).** Пакет `telegram_feed/` рисует PNG за 14 дней
+в стиле терминала (Pillow, без Plotly) и короткую подпись ≤250 символов.
+Примеры: `telegram_feed/examples/FEED.md`.
+
+```bash
+python -m telegram_feed --from-api --out telegram_feed/out
+python -m telegram_feed.publish --dry-run   # после синка; в cron — без --dry-run
+```
+
 **Описания индексов** (что показывает, как считается, что говорит о рынке, как
 читать изменения) лежат в `indices/registry.py` — единственном источнике правды по
 метаданным. Оттуда они попадают и в БД, и в блок «About this index» на странице
