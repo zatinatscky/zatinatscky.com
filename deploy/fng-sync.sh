@@ -10,8 +10,8 @@
 # полный проход по источникам занимает несколько минут, что дольше любого
 # разумного таймаута запроса.
 #
-# Третий шаг — python -m telegram_feed.publish (нужны TELEGRAM_BOT_TOKEN и
-# TELEGRAM_CHANNEL_ID в .env). Ошибка постинга не валит весь таймер.
+# Третий шаг — python -m telegram_feed.publish (TELEGRAM_BOT_TOKEN +
+# TELEGRAM_CHANNEL_<ID> на каждый индекс). Ошибка постинга не валит таймер.
 set -euo pipefail
 
 # Каталог репозитория на сервере (где лежит docker-compose.yml).

@@ -1,13 +1,24 @@
 .DS_Store
 __pycache__/
 *.pyc
-data/*.db
-# Секреты VPS-деплоя — только локально/на сервере, не в git.
+.venv/
+venv/
+
+# Секреты — только локально и на сервере.
 .env
+ivan/.env
+hiphop/.env
 
-# Черновики дневного Telegram-фида (генерируются локально / на сервере).
-telegram_feed/out/
+# Локальные SQLite-дампы (прод — PostgreSQL).
+ivan/data/*.db
+hiphop/data/
 
-# Zip handoff не коммитим — эталон лежит распакованным в ivan/design-handoff/.
-ivan/Data-продукт*.zip
-ivan/*.zip
+# Журнал разборов hiphop генерируется локально.
+hiphop/output/
+
+# Черновики дневного Telegram-фида.
+ivan/telegram_feed/out/
+
+# Zip handoff не коммитим.
+ivan/ivan/*.zip
+zatinatscky.com.zip

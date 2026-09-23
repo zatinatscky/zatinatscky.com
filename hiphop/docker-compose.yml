@@ -1,0 +1,38 @@
+# PostgreSQL + веб-сервис rhyme_analyzer (локальная разработка / VPS).
+# Секреты — в .env (см. .env.example).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hiphop}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hiphop_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-hiphop}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hiphop} -d ${POSTGRES_DB:-hiphop}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hiphop}:${POSTGRES_PASSWORD:-hiphop_dev}@db:5432/${POSTGRES_DB:-hiphop}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:

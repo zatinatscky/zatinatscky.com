@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rhyme Analyzer</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/report.css" />
+</head>
+<body>
+  <div class="layout is-journal-collapsed" id="app-layout">
+    <!-- Левая панель: конфигурация и ввод -->
+    <aside class="sidebar sidebar--left form-panel" id="form-panel">
+      <header class="sidebar__header">
+        <div class="sidebar__brand">
+          <span class="sidebar__mark" aria-hidden="true">Rh</span>
+          <div class="sidebar__brand-text">
+            <h1 class="sidebar__title">Rhyme Analyzer</h1>
+            <p class="sidebar__subtitle">Фонетический разбор рифм</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          id="form-collapse"
+          class="sidebar__icon-btn sidebar__collapse-btn"
+          aria-expanded="true"
+          aria-controls="form-panel"
+          title="Скрыть панель ввода"
+          aria-label="Скрыть панель ввода"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M10.5 3.5 5.5 8l5 4.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <form id="analyze-form" class="sidebar__form" novalidate>
+        <div class="sidebar__scroll">
+          <section class="sidebar__section" aria-labelledby="section-params">
+            <h2 class="sidebar__section-label" id="section-params">Параметры</h2>
+            <div class="sidebar__fields">
+              <div class="field">
+                <label for="song">Название песни</label>
+                <input id="song" name="song" type="text" placeholder="MEZZA" required maxlength="200" />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="lang">Язык G2P</label>
+                  <select id="lang" name="lang">
+                    <option value="ru" selected>Русский</option>
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                  </select>
+                </div>
+                <div class="field field--grow">
+                  <label for="model">Модель</label>
+                  <select id="model" name="model" aria-describedby="model-hint"></select>
+                </div>
+              </div>
+              <p id="model-hint" class="hint field-hint"></p>
+            </div>
+          </section>
+
+          <div id="journal-matches" class="journal-matches" hidden></div>
+
+          <section class="sidebar__section" aria-labelledby="section-text">
+            <div class="sidebar__section-head">
+              <h2 class="sidebar__section-label" id="section-text">Текст песни</h2>
+              <span id="block-count" class="sidebar__section-meta hint"></span>
+            </div>
+            <div id="blocks-container" class="blocks"></div>
+            <div class="toolbar">
+              <button type="button" id="add-block" class="btn secondary btn--compact">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Добавить блок
+              </button>
+            </div>
+          </section>
+
+          <section id="progress-panel" class="progress-panel sidebar__section" hidden aria-live="polite">
+            <h2 class="sidebar__section-label">Прогресс</h2>
+            <div class="progress-head">
+              <span id="progress-label">Анализ…</span>
+              <span id="progress-percent">0%</span>
+            </div>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <ol id="progress-log" class="progress-log"></ol>
+          </section>
+
+          <div id="form-errors" class="errors" hidden></div>
+        </div>
+
+        <footer class="sidebar__footer">
+          <div class="actions actions-cost">
+            <button type="submit" id="submit-btn" class="btn primary">
+              <span class="submit-label">Разобрать рифмы</span>
+              <span id="cost-badge" class="cost-badge" hidden></span>
+            </button>
+            <button
+              type="button"
+              id="cost-help-btn"
+              class="btn icon cost-help-btn"
+              aria-label="Из чего складывается стоимость"
+              title="Из чего складывается стоимость"
+            >?</button>
+          </div>
+          <p id="status" class="status" aria-live="polite"></p>
+        </footer>
+      </form>
+    </aside>
+
+    <!-- Рельса: развернуть левую панель -->
+    <button
+      type="button"
+      class="sidebar-rail sidebar-rail--left"
+      id="form-rail"
+      aria-expanded="false"
+      aria-controls="form-panel"
+      title="Показать ввод"
+      aria-label="Показать панель ввода"
+      hidden
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M5.5 3.5 10.5 8l-5 4.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <div
+      class="splitter splitter-v"
+      id="splitter-sidebar"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Изменить ширину панели ввода"
+      tabindex="0"
+    ></div>
+
+    <!-- Центр: результат разбора -->
+    <main class="panel preview-panel" id="preview-panel">
+      <div class="preview-pane is-empty" id="preview-pane">
+        <div class="preview-header">
+          <h2>Результат</h2>
+          <div class="preview-header-actions">
+            <button type="button" id="open-tab" class="btn secondary small" hidden>Открыть в новой вкладке</button>
+            <button
+              type="button"
+              id="close-preview"
+              class="btn icon preview-close"
+              hidden
+              aria-label="Закрыть разбор"
+              title="Закрыть разбор"
+            >×</button>
+          </div>
+        </div>
+        <div class="preview-body">
+          <div id="preview-placeholder" class="preview-placeholder">
+            <p>Заполните блоки ввода и нажмите «Разобрать рифмы».</p>
+            <p class="hint">Панели по бокам: ввод слева, журнал справа. Анализ через LLM может занять несколько минут.</p>
+          </div>
+          <iframe id="preview-frame" class="preview-frame" title="HTML-отчёт" hidden></iframe>
+          <div id="preview-report" class="preview-report" hidden></div>
+        </div>
+      </div>
+    </main>
+
+    <div
+      class="splitter splitter-v"
+      id="splitter-journal"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Изменить ширину журнала"
+      tabindex="0"
+    ></div>
+
+    <!-- Правая панель: журнал -->
+    <aside class="sidebar sidebar--right journal-panel" id="journal-panel">
+      <header class="sidebar__header">
+        <div class="sidebar__brand-text">
+          <h2 class="sidebar__title">Журнал</h2>
+          <p class="sidebar__subtitle" id="journal-count">Разборы</p>
+        </div>
+        <div class="sidebar__header-actions">
+          <button
+            type="button"
+            id="journal-refresh"
+            class="sidebar__icon-btn"
+            title="Обновить список"
+            aria-label="Обновить журнал"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 3.5V8h-4.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button
+            type="button"
+            id="journal-collapse"
+            class="sidebar__icon-btn sidebar__collapse-btn"
+            aria-expanded="true"
+            aria-controls="journal-panel"
+            title="Скрыть журнал"
+            aria-label="Скрыть журнал"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M5.5 3.5 10.5 8l-5 4.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="sidebar__scroll sidebar__scroll--journal">
+        <p class="hint journal-hint">Сохранённые прогоны. На карточке: в форму · вкладка · переименовать · удалить.</p>
+        <ul id="journal-list" class="journal-list">
+          <li class="journal-empty hint">Пока нет сохранённых разборов.</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Рельса: развернуть журнал -->
+    <button
+      type="button"
+      class="sidebar-rail sidebar-rail--right"
+      id="journal-rail"
+      aria-expanded="false"
+      aria-controls="journal-panel"
+      title="Показать журнал"
+      aria-label="Показать журнал"
+      hidden
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M10.5 3.5 5.5 8l5 4.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Диалоги вне #analyze-form: вложенные <form> в HTML запрещены, иначе ломается app.js -->
+  <dialog id="cost-help-dialog" class="cost-dialog">
+    <div class="cost-dialog-head">
+      <h3>Стоимость анализа</h3>
+      <button type="button" id="cost-help-close" class="btn icon" aria-label="Закрыть">×</button>
+    </div>
+    <p id="cost-help-total" class="cost-help-total"></p>
+    <ol id="cost-help-list" class="cost-help-list"></ol>
+    <p class="hint cost-help-note">Оценка ориентировочная. Точная сумма — в биллинге OpenAI после запроса.</p>
+  </dialog>
+
+  <dialog id="parens-dialog" class="confirm-dialog parens-dialog" aria-labelledby="parens-dialog-title" aria-describedby="parens-dialog-lead">
+    <div class="confirm-dialog-head">
+      <h3 id="parens-dialog-title">Текст в скобках</h3>
+    </div>
+    <div class="confirm-dialog-body">
+      <p class="confirm-dialog-hint" id="parens-dialog-lead"></p>
+      <ul id="parens-preview" class="parens-preview"></ul>
+      <p class="parens-dialog-note hint">Скобки часто помечают ад-lib и ремарки — их можно убрать, чтобы не мешали рифмам.</p>
+    </div>
+    <div class="confirm-dialog-actions confirm-dialog-actions--parens">
+      <button type="button" class="btn primary" id="parens-remove">Удалить из текста</button>
+      <button type="button" class="btn secondary" id="parens-keep">Оставить в анализе</button>
+      <button type="button" class="btn ghost" id="parens-cancel">Отмена</button>
+    </div>
+  </dialog>
+
+  <dialog id="journal-rename-dialog" class="confirm-dialog journal-rename-dialog" aria-labelledby="journal-rename-title">
+    <div class="confirm-dialog-head">
+      <h3 id="journal-rename-title">Переименовать</h3>
+    </div>
+    <form id="journal-rename-form" class="confirm-dialog-body">
+      <label class="field journal-rename-field" for="journal-rename-input">
+        <span>Название</span>
+        <input id="journal-rename-input" type="text" maxlength="200" required autocomplete="off" />
+      </label>
+    </form>
+    <div class="confirm-dialog-actions">
+      <button type="button" class="btn ghost" id="journal-rename-cancel">Отмена</button>
+      <button type="submit" form="journal-rename-form" class="btn primary" id="journal-rename-save">Сохранить</button>
+    </div>
+  </dialog>
+
+  <dialog id="journal-delete-dialog" class="confirm-dialog">
+    <div class="confirm-dialog-head">
+      <h3>Удалить разбор?</h3>
+    </div>
+    <div class="confirm-dialog-body">
+      <p class="confirm-dialog-title" id="journal-delete-title"></p>
+      <p class="confirm-dialog-hint" id="journal-delete-hint">
+        Запись и файлы в <code>output/journal/</code> будут удалены без возможности восстановления.
+      </p>
+    </div>
+    <div class="confirm-dialog-actions">
+      <button type="button" class="btn secondary" id="journal-delete-cancel">Отмена</button>
+      <button type="button" class="btn danger" id="journal-delete-confirm">Удалить</button>
+    </div>
+  </dialog>
+
+  <template id="block-template">
+    <article class="block-card" data-block>
+      <div class="block-head">
+        <select class="block-kind" aria-label="Тип секции">
+          <option value="verse">Куплет</option>
+          <option value="chorus">Припев</option>
+          <option value="hook">Hook</option>
+        </select>
+        <input class="block-title" type="text" placeholder="Заголовок (необяз.)" maxlength="80" />
+        <button type="button" class="btn icon remove-block" title="Удалить блок" aria-label="Удалить блок">×</button>
+      </div>
+      <textarea class="block-text" rows="8" placeholder="Текст секции — по одной строке на строку песни"></textarea>
+      <div class="counters">
+        <span class="counter" data-metric="lines">строк <b>0</b><span class="counter-limit">/24</span></span>
+        <span class="counter" data-metric="words">слов <b>0</b><span class="counter-limit">/200</span></span>
+        <span class="counter" data-metric="chars">симв. <b>0</b><span class="counter-limit">/1000</span></span>
+      </div>
+    </article>
+  </template>
+
+  <script src="/static/app.js" type="module"></script>
+</body>
+</html>

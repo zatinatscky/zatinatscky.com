@@ -7,8 +7,8 @@ services:
   - type: web
     name: zatinatscky-site
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:server --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    buildCommand: pip install -r ivan/requirements.txt
+    startCommand: gunicorn --chdir ivan app:server --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
     plan: starter
     healthCheckPath: /health
     envVars:
@@ -42,8 +42,8 @@ services:
     schedule: "15 3 * * *"
     # Только requests — см. requirements-cron.txt (полный requirements.txt
     # для веба тянет pandas/Dash и может «висеть» на metadata в билде cron).
-    buildCommand: pip install --upgrade pip && pip install -r requirements-cron.txt
-    startCommand: python scripts/trigger_fng_sync.py
+    buildCommand: pip install --upgrade pip && pip install -r ivan/requirements-cron.txt
+    startCommand: python ivan/scripts/trigger_fng_sync.py
     envVars:
       - key: SITE_BASE_URL
         value: https://ivan.zatinatscky.com

@@ -1,0 +1,16 @@
+# Зависимости проекта (ставятся через pip).
+# ВАЖНО: для точной транскрипции дополнительно нужен системный бинарь espeak-ng:
+#   macOS:  brew install espeak-ng
+#   Ubuntu: sudo apt-get install espeak-ng
+# Без него пайплайн работает в приблизительном (fallback) режиме — см. README.
+
+num2words>=0.5.13      # числа -> слова (поддерживает русский): 8 -> "восемь"
+phonemizer>=3.2.1      # обёртка над espeak-ng: текст -> IPA с ударениями
+openai>=1.40.0         # LLM-анализ рифм (--llm): structured output OpenAI API
+python-dotenv>=1.0.0   # загрузка OPENAI_API_KEY из .env
+fastapi>=0.115.0       # HTTP API веб-сервиса
+uvicorn[standard]>=0.32.0  # ASGI-сервер для FastAPI
+gunicorn>=23.0.0       # продакшен на VPS (uvicorn workers)
+pydantic>=2.0.0        # схемы запросов API
+sqlalchemy>=2.0.0      # ORM: тексты, журнал, логи, события
+psycopg[binary]>=3.1   # PostgreSQL (prod); без него работает SQLite

@@ -1,9 +1,16 @@
-# zatinatscky.com / IVAN
+# zatinatscky.com — монорепозиторий IVAN + hiphop
 
-Монорепозиторий двух сайтов на одном VPS:
+Два продукта в одном git-репозитории и на одном VPS:
+
+```
+zatinatscky/
+  ivan/     # визитка zatinatscky.com + IVAN Terminal + дашборды
+  hiphop/   # rhyme_analyzer (hiphop.zatinatscky.com)
+```
 
 - **`zatinatscky.com`** — статичный сайт-визитка (консалтинг, RU/EN).
-- **`ivan.zatinatscky.com`** — продукт **IVAN** (*Index Volatility Alerts & Notifications*): Index Terminal (сетка + страница на каждый индекс) и дашборд Fear & Greed (`/fng/`).
+- **`ivan.zatinatscky.com`** — продукт **IVAN** (*Index Volatility Alerts & Notifications*): Index Terminal и дашборд Fear & Greed (`/fng/`).
+- **`hiphop.zatinatscky.com`** — текстовый анализатор рифм.
 
 ---
 
@@ -27,30 +34,36 @@
 
 ### Логические блоки
 
-- **Точка входа `app.py`** — собирает Flask-приложение, монтирует Dash, реализует **host-aware роутинг**: по `Host` решает, что отдать (визитка vs IVAN), а также `robots.txt`/`sitemap.xml` под каждый домен. API: `/api/fng/latest` для живого hero-блока, `/api/indexes` для терминала, `/api/auth/*` и `/api/me*` для Google/Telegram login и sync watchlist.
-- **Авторизация `auth/`** — Google OAuth + Telegram Login Widget, cookie-сессия, watchlist в Postgres после входа (до входа — localStorage).
-- **Слой данных `fng_data.py`** — подключение к Postgres, полная/инкрементальная загрузка истории Fear & Greed и цен BTC, нормализация `DATABASE_URL`.
-- **Слой индексов `indices/`** — реальные данные терминала (см. раздел «Данные индексов» ниже).
-- **Дашборд `fng_dash_layout.py`** — layout и колбэки Dash: «скелетон» при загрузке, графики, фильтр по датам, логотип-ссылка на главную.
-- **Продукт IVAN `ivan/`** — Index Terminal: `home.html` + страницы `/i/<id>`, общие модули `js/` (`data-api.js` — загрузка из API, UI на React CDN), `css/terminal.css`, favicon/OG.
-- **Дашборд Dash `/fng/`** — отдельный интерактивный Fear & Greed (Plotly); пока живёт рядом с Terminal.
-- **Статичный сайт** — `index.html`, `about.html`, `articles.html`, `products.html`, `en/` (английская версия), `css/`, `js/`.
-- **Деплой `deploy/` + конфиги** — `Dockerfile`, `docker-compose.yml`, `Caddyfile`, скрипты `fng-sync.*` (синхронизация) и `backup.sh` (бэкап БД).
-- **SEO** — мета-теги, Open Graph, JSON-LD (Schema.org), `robots.txt`, `sitemap.xml`.
+- **Точка входа `ivan/app.py`** — Flask + Dash, host-aware роутинг (визитка vs IVAN), `robots.txt`/`sitemap.xml`. API: `/api/fng/latest`, `/api/indexes`, `/api/auth/*`, `/api/me*`.
+- **Авторизация `ivan/auth/`** — Google OAuth + Telegram Login Widget, cookie-сессия, watchlist в Postgres.
+- **Слой данных `ivan/fng_data.py`** — Postgres, история Fear & Greed и BTC.
+- **Слой индексов `ivan/indices/`** — реальные данные терминала (см. раздел «Данные индексов» ниже).
+- **Дашборд `ivan/fng_dash_layout.py`** — layout и колбэки Dash.
+- **UI терминала `ivan/ivan/`** — Index Terminal: `home.html`, `/i/<id>`, `js/`, `css/terminal.css`.
+- **Статичный сайт** — `ivan/index.html`, `about.html`, `articles.html`, `products.html`, `en/`, `css/`.
+- **hiphop `hiphop/`** — FastAPI `rhyme_analyzer` + `web/` (форма разбора рифм).
+- **Деплой** — корневые `docker-compose.yml`, `Caddyfile`, `deploy/` (синк IVAN и бэкап). Образы собираются из `ivan/` и `hiphop/`.
+- **SEO** — мета-теги, Open Graph, JSON-LD, `robots.txt`, `sitemap.xml`.
 
 ### Запуск
 
 ```bash
-# Локально
+# Локально — IVAN
+cd ivan
 pip install -r requirements.txt
 python app.py            # http://localhost:8050
 
-# Продакшен (VPS)
-cp .env.example .env     # заполнить секреты
+# Локально — hiphop
+cd hiphop
+pip install -r requirements.txt
+./run_server.sh          # http://localhost:8000
+
+# Продакшен (VPS), из корня репозитория
+cp .env.example .env     # заполнить секреты IVAN и HIPHOP_*
 docker compose up -d --build
 ```
 
-Подробные инструкции: `DEPLOY_VPS.md` (VPS) и `DEPLOY_RENDER.md` (Render).
+Подробные инструкции: `DEPLOY_VPS.md` (VPS) и `ivan/DEPLOY_RENDER.md` (Render).
 
 ### Данные индексов
 

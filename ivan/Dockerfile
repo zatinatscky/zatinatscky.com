@@ -1,4 +1,6 @@
 # Образ веб-сервиса IVAN (Flask + Dash под gunicorn).
+# Собирается из корня репозитория: docker compose build web
+# (context: ./ivan — этот Dockerfile и код приложения).
 # psycopg[binary] ставится готовым колесом (libpq внутри) — системные пакеты не нужны.
 FROM python:3.12-slim
 

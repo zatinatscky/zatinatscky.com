@@ -1,0 +1,384 @@
+/* Стили отчёта в превью (рендер из JSON на фронтенде) */
+
+.report-view {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  color: var(--fg, #ececec);
+  font-size: 14px;
+}
+
+.report-view h1 {
+  font-size: 1.35rem;
+  margin: 0 0 0.35rem;
+}
+
+.report-view .rv-text-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 1.25rem 0 0.65rem;
+}
+
+.report-view .rv-text-head h2 {
+  margin: 0;
+}
+
+.report-view .rv-ipa-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--fg2, #b6b6bb);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.report-view .rv-ipa-toggle-input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent, #b692f6);
+  cursor: pointer;
+}
+
+.report-view .rv-ipa-mark {
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Скрытие IPA-строк по чекбоксу */
+.report-view.ipa-collapsed .rv-ipa-row {
+  display: none;
+}
+
+.report-view h2 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.65rem;
+}
+
+.report-view .rv-muted {
+  color: var(--fg2, #b6b6bb);
+  font-size: 0.85rem;
+}
+
+.report-view .rv-version {
+  font-size: 0.78rem;
+  color: var(--fg3, #8a8a90);
+  margin-top: 0.35rem;
+}
+
+.report-view .rv-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.85rem 0;
+}
+
+@media (max-width: 700px) {
+  .report-view .rv-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.report-view .rv-stat {
+  background: var(--surface-2, #1c2230);
+  border: 1px solid var(--border, #2a3344);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+}
+
+.report-view .rv-stat .v {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.report-view .rv-stat .l {
+  font-size: 0.72rem;
+  color: var(--fg3, #8a8a90);
+}
+
+.report-view .rv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.65rem;
+  color: var(--fg2, #b6b6bb);
+}
+
+.report-view .rv-legend .int {
+  display: inline-block;
+  font-weight: 600;
+  color: var(--fg, #ececec);
+  background: color-mix(in srgb, #5fd08a 24%, transparent);
+  padding: 0 3px;
+  border-radius: 4px;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.report-view .rv-card {
+  background: var(--surface-2, #1c2230);
+  border: 1px solid var(--border, #2a3344);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.report-view .rv-section {
+  margin-bottom: 1rem;
+}
+
+.report-view .rv-sec-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg3, #8a8a90);
+  margin-bottom: 0.35rem;
+}
+
+.report-view .rv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.report-view .rv-chip {
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--fg, #ececec);
+  background: color-mix(in srgb, var(--cc) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cc) 28%, transparent);
+  padding: 2px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.35;
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.report-view .rv-chip:hover {
+  background: color-mix(in srgb, var(--cc) 36%, transparent);
+  border-color: color-mix(in srgb, var(--cc) 45%, transparent);
+}
+
+.report-view .rv-chip:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--cc) 70%, #fff);
+  outline-offset: 2px;
+}
+
+.report-view .rv-chip-active {
+  background: color-mix(in srgb, var(--cc) 44%, transparent);
+  border-color: color-mix(in srgb, var(--cc) 58%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cc) 32%, transparent);
+}
+
+.report-view .rv-line {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border, #2a3344);
+}
+
+.report-view .rv-lrow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.report-view .rv-num {
+  width: 1.4rem;
+  flex-shrink: 0;
+  text-align: right;
+  color: var(--fg3, #8a8a90);
+  font-size: 0.68rem;
+}
+
+.report-view .rv-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-view .rv-ipa {
+  font-size: 0.78rem;
+  color: var(--fg2, #b6b6bb);
+  font-style: italic;
+}
+
+.report-view .w-chain {
+  font-weight: 600;
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 3px;
+  margin: 0 -1px;
+  cursor: default;
+  background: color-mix(in srgb, var(--cc) 26%, transparent);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.report-view .rv-ipa .w-chain {
+  background: color-mix(in srgb, var(--cc) 20%, transparent);
+}
+
+.report-view .w-chain.w-int {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--cc) 65%, transparent);
+}
+
+.report-view .rv-card.focus-chain .rv-text {
+  color: color-mix(in srgb, var(--fg, #ececec) 46%, var(--bg, #0d0f14));
+}
+
+.report-view .rv-card.focus-chain .rv-ipa {
+  color: color-mix(in srgb, var(--fg2, #b6b6bb) 46%, var(--bg, #0d0f14));
+}
+
+.report-view .rv-card.focus-chain .w-chain:not(.chain-active) {
+  color: color-mix(in srgb, var(--fg, #ececec) 46%, var(--bg, #0d0f14));
+  background: color-mix(in srgb, var(--cc) 10%, transparent);
+}
+
+.report-view .rv-card.focus-chain .rv-ipa .w-chain:not(.chain-active) {
+  color: color-mix(in srgb, var(--fg2, #b6b6bb) 46%, var(--bg, #0d0f14));
+  background: color-mix(in srgb, var(--cc) 8%, transparent);
+}
+
+.report-view .rv-card.focus-chain .w-chain.chain-active {
+  color: var(--fg, #ececec);
+  background: color-mix(in srgb, var(--cc) 44%, transparent);
+}
+
+.report-view .rv-card.focus-chain .rv-ipa .w-chain.chain-active {
+  color: var(--fg2, #b6b6bb);
+  background: color-mix(in srgb, var(--cc) 36%, transparent);
+}
+
+.report-view table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.report-view th,
+.report-view td {
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid var(--border, #2a3344);
+  vertical-align: top;
+}
+
+.report-view th {
+  color: var(--fg3, #8a8a90);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.report-view tbody tr.chain-active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.report-view tbody tr.rv-chain-row {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.report-view tbody tr.rv-chain-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.report-view tbody tr.rv-chain-row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent, #b692f6) 80%, #fff);
+  outline-offset: -2px;
+}
+
+.report-view tbody tr.chain-active td:first-child {
+  box-shadow: inset 3px 0 0 var(--row-cc, #6ba8f7);
+}
+
+.report-view .rv-chart {
+  background: var(--surface-2, #1c2230);
+  border: 1px solid var(--border, #2a3344);
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.report-view .rv-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+}
+
+.report-view .rv-bar-label {
+  width: 6.5rem;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.report-view .rv-bar-track {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.report-view .rv-bar-fill {
+  height: 14px;
+  border-radius: 4px;
+  min-width: 2px;
+}
+
+.report-view .rv-bar-value {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.report-view .rv-legacy-note {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(240, 163, 94, 0.12);
+  border: 1px solid rgba(240, 163, 94, 0.35);
+  color: #f0d0a8;
+  font-size: 0.8rem;
+}
+
+.preview-report {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: 0.75rem 1rem;
+}
+
+.preview-frame {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.preview-pane.has-report .preview-placeholder {
+  display: none;
+}
+
+.preview-pane.is-empty .preview-report,
+.preview-pane.is-empty .preview-frame {
+  display: none;
+}
+
+.preview-pane.has-report.is-legacy .preview-report {
+  display: none;
+}
+
+.preview-pane.has-report:not(.is-legacy) .preview-frame {
+  display: none;
+}

@@ -1,7 +1,12 @@
-# Стек IVAN на одном VPS: PostgreSQL + web (Flask/Dash) + Caddy (авто-HTTPS).
-# Значения секретов берутся из .env (см. .env.example).
+# Монорепозиторий на одном VPS: IVAN + hiphop + общий Caddy (авто-HTTPS).
+# Запуск из корня: /home/ivan/zatinatscky
+#   docker compose up -d --build
+#
+# Секреты IVAN и hiphop лежат в корневом .env (compose подставляет ${VAR} только оттуда).
+# Имена сервисов `db` и `web` сохранены — на них завязаны deploy/fng-sync.sh и backup.sh.
 
 services:
+  # --- IVAN: PostgreSQL с историей индексов ---
   db:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -10,54 +15,118 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
+      # Явное имя тома — тот же volume, что был до переезда в ivan/.
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      # web стартует только когда БД реально готова принимать подключения.
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # --- IVAN: Flask/Dash (контекст сборки — каталог ivan/) ---
   web:
-    build: .
+    build:
+      context: ./ivan
+      dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      # Код сам добавит +psycopg к postgresql:// (см. fng_data._normalize_database_url).
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       AUTO_SYNC_ON_START: "true"
       DASH_ROOT_HOST: ${DASH_ROOT_HOST}
       CRON_TOKEN: ${CRON_TOKEN}
-      # Сессии и OAuth (см. .env.example). Пустые Google/Telegram → кнопки скрыты.
       SECRET_KEY: ${SECRET_KEY:-dev-only-change-me}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://ivan.zatinatscky.com}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
-      # Канал для дневных карточек индексов (telegram_feed.publish).
+      TELEGRAM_CHANNELS: ${TELEGRAM_CHANNELS:-}
+      TELEGRAM_CHANNEL_FNG: ${TELEGRAM_CHANNEL_FNG:-}
+      TELEGRAM_CHANNEL_ALTSEASON: ${TELEGRAM_CHANNEL_ALTSEASON:-}
+      TELEGRAM_CHANNEL_BVOL: ${TELEGRAM_CHANNEL_BVOL:-}
+      TELEGRAM_CHANNEL_NUPL: ${TELEGRAM_CHANNEL_NUPL:-}
+      TELEGRAM_CHANNEL_SSR: ${TELEGRAM_CHANNEL_SSR:-}
+      TELEGRAM_CHANNEL_FUNDING: ${TELEGRAM_CHANNEL_FUNDING:-}
+      TELEGRAM_CHANNEL_MVRV: ${TELEGRAM_CHANNEL_MVRV:-}
+      TELEGRAM_CHANNEL_VIX: ${TELEGRAM_CHANNEL_VIX:-}
+      TELEGRAM_CHANNEL_SPX: ${TELEGRAM_CHANNEL_SPX:-}
+      TELEGRAM_CHANNEL_NIKKEI: ${TELEGRAM_CHANNEL_NIKKEI:-}
+      TELEGRAM_CHANNEL_CNNFNG: ${TELEGRAM_CHANNEL_CNNFNG:-}
+      TELEGRAM_CHANNEL_BRENT: ${TELEGRAM_CHANNEL_BRENT:-}
+      TELEGRAM_CHANNEL_US10Y: ${TELEGRAM_CHANNEL_US10Y:-}
+      TELEGRAM_CHANNEL_DXY: ${TELEGRAM_CHANNEL_DXY:-}
+      TELEGRAM_SUMMARY_CHANNEL_ID: ${TELEGRAM_SUMMARY_CHANNEL_ID:-}
       TELEGRAM_CHANNEL_ID: ${TELEGRAM_CHANNEL_ID:-}
       TELEGRAM_FEED_ENABLED: ${TELEGRAM_FEED_ENABLED:-true}
-    # Наружу не публикуем — доступ только через Caddy по внутренней сети.
     expose:
       - "8050"
 
+  # --- hiphop: отдельная PostgreSQL (не смешиваем с IVAN) ---
+  hiphop-db:
+    image: postgres:16-alpine
+    container_name: hiphop-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hiphop
+      POSTGRES_PASSWORD: ${HIPHOP_POSTGRES_PASSWORD:?задайте HIPHOP_POSTGRES_PASSWORD в корневом .env}
+      POSTGRES_DB: hiphop
+    volumes:
+      - hiphop_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiphop -d hiphop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- hiphop: FastAPI rhyme_analyzer (контейнер hiphop-web — так его зовёт Caddy) ---
+  hiphop-web:
+    build:
+      context: ./hiphop
+      dockerfile: Dockerfile
+    container_name: hiphop-web
+    restart: unless-stopped
+    depends_on:
+      hiphop-db:
+        condition: service_healthy
+    environment:
+      # Приложение читает POSTGRES_* (см. rhyme_analyzer/db/config.py).
+      POSTGRES_HOST: hiphop-db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: hiphop
+      POSTGRES_PASSWORD: ${HIPHOP_POSTGRES_PASSWORD:?задайте HIPHOP_POSTGRES_PASSWORD в корневом .env}
+      POSTGRES_DB: hiphop
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
+    expose:
+      - "8000"
+
+  # --- общий HTTPS-прокси для ivan.*, zatinatscky.com и hiphop.* ---
   caddy:
     image: caddy:2
     restart: unless-stopped
     depends_on:
       - web
+      - hiphop-web
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data       # сертификаты Let's Encrypt (важно сохранять)
+      - caddy_data:/data
       - caddy_config:/config
 
 volumes:
+  # Имена как у compose-проекта zatinatscky — чтобы не создать пустые тома на сервере.
   pgdata:
+    name: zatinatscky_pgdata
   caddy_data:
+    name: zatinatscky_caddy_data
   caddy_config:
+    name: zatinatscky_caddy_config
+  # Старый отдельный compose в ~/hiphop называл том hiphop_hiphop_pgdata.
+  hiphop_pgdata:
+    name: hiphop_hiphop_pgdata

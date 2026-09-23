@@ -1,0 +1,11 @@
+# Фрагмент для Caddyfile IVAN (~/zatinatscky/Caddyfile).
+# Контейнер hiphop-web подключён к сети zatinatscky_default.
+
+hiphop.zatinatscky.com {
+	reverse_proxy hiphop-web:8000
+	encode gzip zstd
+
+	log {
+		output stdout
+	}
+}

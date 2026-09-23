@@ -1,0 +1,18 @@
+# Секреты и локальная конфигурация
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Выходные файлы (журнал, HTML-экспорт — генерируются локально)
+output/
+
+# Локальная SQLite (если не используется PostgreSQL)
+data/

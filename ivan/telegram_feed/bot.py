@@ -1,11 +1,9 @@
 """
-Тонкая обёртка над Telegram Bot API для постинга в канал.
+Тонкая обёртка над Telegram Bot API для постинга в каналы.
 
 Нужны:
-  TELEGRAM_BOT_TOKEN  — тот же бот, что для Login Widget (или отдельный)
-  TELEGRAM_CHANNEL_ID — @channel_username или числовой id (-100…)
-
-Бот должен быть админом канала с правом публиковать сообщения.
+  TELEGRAM_BOT_TOKEN — бот (админ каждого канала)
+  каналы индексов    — см. telegram_feed/channels.py
 """
 
 from __future__ import annotations
@@ -22,22 +20,11 @@ class TelegramBotError(RuntimeError):
     pass
 
 
-def configured() -> bool:
-    return bool(os.environ.get("TELEGRAM_BOT_TOKEN") and os.environ.get("TELEGRAM_CHANNEL_ID"))
-
-
 def _token() -> str:
     token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
     if not token:
         raise TelegramBotError("TELEGRAM_BOT_TOKEN не задан")
     return token
-
-
-def _chat_id() -> str:
-    chat = (os.environ.get("TELEGRAM_CHANNEL_ID") or "").strip()
-    if not chat:
-        raise TelegramBotError("TELEGRAM_CHANNEL_ID не задан")
-    return chat
 
 
 def _call(method: str, *, files: dict | None = None, data: dict | None = None) -> dict[str, Any]:
@@ -52,13 +39,18 @@ def _call(method: str, *, files: dict | None = None, data: dict | None = None) -
     return payload.get("result") or {}
 
 
-def send_photo(png: bytes, caption: str, *, filename: str = "ivan.png") -> str | None:
-    """Отправляет фото с подписью. Возвращает message_id или None."""
-    # Лимит caption у sendPhoto — 1024; наш формат ≤250.
+def send_photo(
+    png: bytes,
+    caption: str,
+    *,
+    chat_id: str,
+    filename: str = "ivan.png",
+) -> str | None:
+    """Отправляет фото с подписью в указанный канал. Возвращает message_id."""
     result = _call(
         "sendPhoto",
         data={
-            "chat_id": _chat_id(),
+            "chat_id": chat_id,
             "caption": caption[:1024],
             "disable_notification": "false",
         },
@@ -68,12 +60,12 @@ def send_photo(png: bytes, caption: str, *, filename: str = "ivan.png") -> str |
     return str(mid) if mid is not None else None
 
 
-def send_message(text: str) -> str | None:
-    """Текстовый пост (summary) без картинки."""
+def send_message(text: str, *, chat_id: str) -> str | None:
+    """Текстовый пост (summary) в указанный канал."""
     result = _call(
         "sendMessage",
         data={
-            "chat_id": _chat_id(),
+            "chat_id": chat_id,
             "text": text[:4096],
             "disable_web_page_preview": "true",
         },

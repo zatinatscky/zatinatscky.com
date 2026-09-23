@@ -38,7 +38,7 @@ python -m telegram_feed --out telegram_feed/out
 
 Смотреть черновик: `telegram_feed/out/FEED.md`.
 
-## Автопостинг в канал
+## Автопостинг: 14 индексов → 14 каналов
 После `indices.sync` systemd-таймер (`deploy/fng-sync.sh`) вызывает:
 
 ```bash
@@ -46,20 +46,27 @@ python -m telegram_feed.publish
 ```
 
 Логика:
-1. Берёт все индексы со **свежим** наблюдением (дата точки ≤ 3 дней от as_of).
-2. Пропускает уже опубликованные (`telegram_post_log` в Postgres).
-3. Шлёт PNG + caption, пауза ~2.5 с между постами.
-4. В конце — текстовый summary (топ movers + ссылка на терминал).
+1. Берёт индексы со **свежим** наблюдением (дата точки ≤ 3 дней от as_of).
+2. Для каждого смотрит свой канал (`TELEGRAM_CHANNEL_VIX`, …); без канала — пропуск.
+3. Пропускает уже опубликованные (`telegram_post_log` в Postgres).
+4. Шлёт PNG + caption в канал индекса, пауза ~2.5 с.
+5. Опционально summary в `TELEGRAM_SUMMARY_CHANNEL_ID` / `TELEGRAM_CHANNEL_ID`.
 
-Env: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID`, опционально `TELEGRAM_FEED_ENABLED`.
+Env (пример):
 
 ```bash
-# Пробный прогон на сервере (без отправки)
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHANNEL_FNG=@ivan_fng
+TELEGRAM_CHANNEL_VIX=@ivan_vix
+# … остальные 12 …
+# или одной строкой:
+# TELEGRAM_CHANNELS={"fng":"@ivan_fng","vix":"@ivan_vix",...}
+TELEGRAM_SUMMARY_CHANNEL_ID=@ivan_daily   # опционально
+```
+
+```bash
+docker compose exec -T web python -m telegram_feed.publish --list-channels
 docker compose exec -T web python -m telegram_feed.publish --dry-run
-
-# Реальная отправка сейчас
 docker compose exec -T web python -m telegram_feed.publish
-
-# Репост поверх лога
 docker compose exec -T web python -m telegram_feed.publish --force vix
 ```
