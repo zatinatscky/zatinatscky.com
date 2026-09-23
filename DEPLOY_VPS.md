@@ -173,8 +173,8 @@ crontab -e
 Восстановление из дампа (пример):
 
 ```bash
-gunzip -c ~/backups/zatinatscky-YYYYMMDD-HHMMSS.sql.gz | \
-  docker compose exec -T db psql -U ivan -d zatinatscky
+gunzip -c ~/backups/ivan-YYYYMMDD-HHMMSS.sql.gz | \
+  docker compose exec -T db psql -U ivan -d ivan
 ```
 
 ---
@@ -250,7 +250,9 @@ docker compose up -d --build
 | Перезапустить web | `docker compose restart web` |
 | Остановить всё | `docker compose down` |
 | Поднять всё | `docker compose up -d` |
-| Зайти в БД | `docker compose exec db psql -U ivan -d zatinatscky` |
+| Зайти в БД IVAN | `docker compose exec db psql -U ivan -d ivan` |
+| DataGrip IVAN | SSH `ivan@13.140.157.222`, затем Host `127.0.0.1` Port **`5432`**, user `ivan`, db **`ivan`**, пароль `POSTGRES_PASSWORD`. |
+| DataGrip hiphop | Тот же SSH-туннель, Host `127.0.0.1` Port **`5433`**, user `hiphop`, db `hiphop`, пароль `HIPHOP_POSTGRES_PASSWORD`. |
 | Ручной синк (всё) | `sudo systemctl start fng-sync.service` |
 | Синк только индексов | `docker compose exec -T web python -m indices.sync` |
 | Один индекс | `docker compose exec -T web python -m indices.sync vix` |

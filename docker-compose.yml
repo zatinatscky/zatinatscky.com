@@ -11,12 +11,17 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
+      # Имя БД — POSTGRES_DB из .env (ivan). Кластер не пересоздаёт БД на рестарте:
+      # rename на живом томе делается ALTER DATABASE, см. DEPLOY_VPS.
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       # Явное имя тома — тот же volume, что был до переезда в ivan/.
       - pgdata:/var/lib/postgresql/data
+    # Только localhost сервера — для SSH-туннеля из DataGrip. В интернет не торчим.
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -75,6 +80,9 @@ services:
       POSTGRES_DB: hiphop
     volumes:
       - hiphop_pgdata:/var/lib/postgresql/data
+    # Только localhost сервера — SSH-туннель DataGrip (IVAN уже на 5432).
+    ports:
+      - "127.0.0.1:5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U hiphop -d hiphop"]
       interval: 10s

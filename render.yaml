@@ -1,7 +1,7 @@
 databases:
   - name: zatinatscky-postgres
-    databaseName: zatinatscky
-    user: zatinatscky
+    databaseName: ivan
+    user: ivan
 
 services:
   - type: web
